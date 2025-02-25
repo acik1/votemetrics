@@ -62,7 +62,7 @@
             <a href="javascript:void(0);" onclick="loadContent('data')">Data</a>
             <div class="dropdown-content">
                 <a href="javascript:void(0);" onclick="loadElection('german-federal-2025')">German Federal Election 2025</a>
-                <!-- Add more elections here -->
+                <!-- More elections can be added here -->
             </div>
         </div>
         <a href="#about" onclick="loadContent('about')">About</a>
@@ -90,8 +90,7 @@
                         <!-- More elections can be added here -->
                     </ul>
                 `,
-                about: "<h2>About VoteMetrics</h2><p>Details about the website and how it works...</p>",
-                GermanFederal2025: "Loading German Federal Election 2025 content..."
+                about: "<h2>About VoteMetrics</h2><p>Details about the website and how it works...</p>"
             };
 
             // Set the main content based on the clicked menu item
@@ -105,6 +104,7 @@
             fetch(`elections/GermanFederal2025/${electionId}.html`)
                 .then(response => response.text())
                 .then(data => {
+                    // Inject the loaded HTML into the content section of the page
                     content.innerHTML = data;
                 })
                 .catch(error => {
