@@ -20,16 +20,49 @@
             text-decoration: none;
             margin: 0 15px;
             font-size: 18px;
+            position: relative;
         }
         nav a:hover {
             text-decoration: underline;
+        }
+
+        /* Dropdown menu styles */
+        .dropdown {
+            display: inline-block;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #333;
+            min-width: 160px;
+            z-index: 1;
+        }
+        .dropdown-content a {
+            color: white;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+        .dropdown-content a:hover {
+            background-color: #575757;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
         }
     </style>
 </head>
 <body>
     <nav>
         <a href="#home">Home</a>
-        <a href="#data">Data</a>
+        <div class="dropdown">
+            <a href="#data">Data</a>
+            <div class="dropdown-content">
+                <a href="#election1">German Federal Election 2025</a>
+                <a href="#election2">US Presidential Election 2024</a>
+                <!-- Add more election links as needed -->
+            </div>
+        </div>
         <a href="#about">About</a>
     </nav>
     <h1>Welcome to VoteMetrics</h1>
