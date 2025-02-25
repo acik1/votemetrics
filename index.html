@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,39 +11,67 @@
             margin: 0;
             padding: 0;
         }
-
         nav {
             background: #333;
             padding: 10px;
+            position: relative;
         }
-
         nav a {
             color: white;
             text-decoration: none;
             margin: 0 15px;
             font-size: 18px;
         }
-
         nav a:hover {
             text-decoration: underline;
         }
-
+        /* Dropdown container */
+        .dropdown {
+            display: inline-block;
+            position: relative;
+        }
+        /* Dropdown menu */
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #333;
+            min-width: 160px;
+            z-index: 1;
+        }
+        .dropdown-content a {
+            color: white;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+        .dropdown-content a:hover {
+            background-color: #575757;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
         #content {
             margin-top: 20px;
         }
     </style>
 </head>
-
 <body>
     <nav>
         <a href="#home" onclick="loadContent('home')">Home</a>
-        <a href="#data" onclick="loadContent('data')">Data</a>
+        <div class="dropdown">
+            <a href="javascript:void(0);" onclick="loadContent('data')">Data</a>
+            <div class="dropdown-content">
+                <a href="javascript:void(0);" onclick="loadElection('german-federal-2025')">German Federal Election 2025</a>
+                <!-- Add more elections here -->
+            </div>
+        </div>
         <a href="#about" onclick="loadContent('about')">About</a>
     </nav>
 
     <h1>Welcome to VoteMetrics</h1>
     <p>Explore correlations between election results and social/economic indicators.</p>
 
+    <!-- Dynamic content will load here -->
     <div id="content">
         <h2>Welcome! Please choose an option from the menu above.</h2>
     </div>
@@ -53,54 +80,37 @@
         function loadContent(page) {
             const content = document.getElementById('content');
 
+            // Define the paths to the different sections (elections, about, etc.)
             const contentPaths = {
                 home: "<h2>Welcome! Please choose an option from the menu above.</h2>",
                 data: `
                     <h2>Select an Election</h2>
                     <ul>
-                        <a href="javascript:void(0);" onclick="loadElection('german-federal-2025')">German Federal Election 2025</a>
-                        <a href="javascript:void(0);" onclick="loadElection('us-presidential-2024')">US Presidential Election 2024</a>
+                        <li><a href="javascript:void(0);" onclick="loadElection('german-federal-2025')">German Federal Election 2025</a></li>
+                        <!-- More elections can be added here -->
                     </ul>
                 `,
                 about: "<h2>About VoteMetrics</h2><p>Details about the website and how it works...</p>",
+                GermanFederal2025: "Loading German Federal Election 2025 content..."
             };
 
+            // Set the main content based on the clicked menu item
             content.innerHTML = contentPaths[page] || contentPaths['home'];
         }
 
         function loadElection(electionId) {
             const content = document.getElementById('content');
-
-            const electionPaths = {
-                'german-federal-2025': '/elections/GermanFederal2025/german-federal-2025.html',
-                'us-presidential-2024': '/elections/USPresidential2024/us-presidential-2024.html'
-            };
-
-            const filePath = electionPaths[electionId];
-
-            if (!filePath) {
-                content.innerHTML = "<p>Election data not found.</p>";
-                return;
-            }
-
-            // Fetch the election data from the mapped path
-            fetch(filePath)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Failed to load: ${response.statusText}`);
-                    }
-                    return response.text();
-                })
+            
+            // Use AJAX to load content dynamically
+            fetch(`elections/GermanFederal2025/${electionId}.html`)
+                .then(response => response.text())
                 .then(data => {
-                    content.innerHTML = "<p>Success!</p>";
+                    content.innerHTML = data;
                 })
                 .catch(error => {
-                    console.error(error);
-                    content.innerHTML = "<p>Failed to load the election data.</p>";
+                    content.innerHTML = "<p>Failed to load the election data. Please try again later.</p>";
                 });
         }
-
     </script>
 </body>
-
 </html>
