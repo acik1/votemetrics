@@ -45,7 +45,6 @@
     <h1>Welcome to VoteMetrics</h1>
     <p>Explore correlations between election results and social/economic indicators.</p>
 
-    <!-- Dynamic content will load here -->
     <div id="content">
         <h2>Welcome! Please choose an option from the menu above.</h2>
     </div>
@@ -54,7 +53,6 @@
         function loadContent(page) {
             const content = document.getElementById('content');
 
-            // Define the paths to the different sections (elections, about, etc.)
             const contentPaths = {
                 home: "<h2>Welcome! Please choose an option from the menu above.</h2>",
                 data: `
@@ -67,22 +65,17 @@
                 about: "<h2>About VoteMetrics</h2><p>Details about the website and how it works...</p>",
             };
 
-            // Set the main content based on the clicked menu item
             content.innerHTML = contentPaths[page] || contentPaths['home'];
         }
 
         function loadElection(electionId) {
             const content = document.getElementById('content');
 
-            // Map election identifiers to their specific paths
             const electionPaths = {
                 'german-federal-2025': '/elections/GermanFederal2025/german-federal-2025.html',
-                // Add other elections here
-                'us-presidential-2024': '/elections/USPresidential2024/us-presidential-2024.html',
-                // more elections...
+                'us-presidential-2024': '/elections/USPresidential2024/us-presidential-2024.html'
             };
 
-            // Get the path based on the electionId
             const filePath = electionPaths[electionId];
 
             if (!filePath) {
@@ -99,11 +92,11 @@
                     return response.text();
                 })
                 .then(data => {
-                    content.innerHTML = data;
+                    content.innerHTML = "<p>Success!</p>";
                 })
                 .catch(error => {
                     console.error(error);
-                    content.innerHTML = "<p>Failed to load the election data. Please try again later.</p>";
+                    content.innerHTML = "<p>Failed to load the election data.</p>";
                 });
         }
 
