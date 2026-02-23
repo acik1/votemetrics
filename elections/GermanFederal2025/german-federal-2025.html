@@ -2,3 +2,129 @@
 <a href="german-federal-2025.html">German Federal Election 2025</a>
 
 
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Wahl & Sozialindikatoren</title>
+  <!-- Chart.js einbinden -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Papa Parse für CSV-Import -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .chart-container {
+      width: 80%;
+      margin: 20px auto;
+    }
+    select {
+      padding: 8px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Korrelation: Wahlergebnis & Sozialindikator</h1>
+
+  <!-- Dropdowns für Auswahl -->
+  <div>
+    <label for="party-select">Partei:</label>
+    <select id="party-select">
+      <option value="gruene">Grüne</option>
+    </select>
+  </div>
+  <div>
+    <label for="indicator-select">Sozialindikator:</label>
+    <select id="indicator-select">
+      <option value="arbeitslosigkeit">Arbeitslosigkeit (%)</option>
+    </select>
+  </div>
+
+  <!-- Platzhalter für das Diagramm -->
+  <div class="chart-container">
+    <canvas id="myChart"></canvas>
+  </div>
+
+  <script>
+    // Globale Variable für das Chart-Objekt
+    let myChart;
+
+    // CSV-Daten laden und Chart zeichnen
+    async function loadData() {
+      const party = document.getElementById("party-select").value;
+      const indicator = document.getElementById("indicator-select").value;
+
+      // CSV-Dateien laden (Pfad anpassen!)
+      const wahlResponse = await fetch('wahl_daten.csv');
+      const wahlText = await wahlResponse.text();
+      const wahlData = Papa.parse(wahlText, { header: true }).data;
+
+      const sozialResponse = await fetch('sozial_daten.csv');
+      const sozialText = await sozialResponse.text();
+      const sozialData = Papa.parse(sozialText, { header: true }).data;
+
+      // Daten für Chart.js aufbereiten
+      const labels = wahlData.map(row => row.Jahr);
+      const wahlValues = wahlData.map(row => parseFloat(row.Prozent));
+      const sozialValues = sozialData.map(row => parseFloat(row.Prozent));
+
+      // Chart erstellen/aktualisieren
+      if (myChart) {
+        myChart.destroy(); // Altes Chart löschen
+      }
+
+      const ctx = document.getElementById('myChart').getContext('2d');
+      myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: `Wahlergebnis (${party}) in %`,
+              data: wahlValues,
+              borderColor: 'green',
+              backgroundColor: 'rgba(0, 255, 0, 0.1)',
+              tension: 0.3
+            },
+            {
+              label: `Sozialindikator (${indicator})`,
+              data: sozialValues,
+              borderColor: 'blue',
+              backgroundColor: 'rgba(0, 0, 255, 0.1)',
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: `Korrelation: ${party} & ${indicator}`
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: false,
+              title: {
+                display: true,
+                text: 'Prozent (%)'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Event-Listener für Dropdowns
+    document.getElementById("party-select").addEventListener("change", loadData);
+    document.getElementById("indicator-select").addEventListener("change", loadData);
+
+    // Initial laden
+    loadData();
+  </script>
+</body>
+</html>
