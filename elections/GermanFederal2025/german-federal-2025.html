@@ -60,17 +60,23 @@
         async function loadCSV(file) {
             try {
                 const response = await fetch(file);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP-Fehler: ${response.status}`);
                 const text = await response.text();
-                const parsed = Papa.parse(text, { header: true, dynamicTyping: true });
+                const parsed = Papa.parse(text, {
+                    header: true,          // Erste Zeile als Header behandeln
+                    delimiter: ",",        // Trennzeichen erzwingen
+                    skipEmptyLines: true,  // Leere Zeilen ignorieren
+                    encoding: "UTF-8"      // Kodierung festlegen
+                });
+                if (parsed.errors.length > 0) {
+                    console.error("CSV-Parsing-Fehler:", parsed.errors);
+                }
                 return {
                     data: parsed.data,
-                    headers: parsed.meta.fields
+                    headers: parsed.meta.fields  // Header (Spaltennamen)
                 };
             } catch (error) {
-                console.error("Fehler beim Laden der CSV-Datei:", error);
+                console.error(`Fehler beim Laden von ${file}:`, error);
                 return { data: [], headers: [] };
             }
         }
