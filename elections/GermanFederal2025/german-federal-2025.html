@@ -60,12 +60,12 @@
         async function initDropdowns() {
             try {
                 // Wahlergebnisse laden
-                const electionResult = await loadCSV("wahlergebnisse_btw_2025.csv");
+                const electionResult = await loadCSV("elections/GermanFederal2025/wahlergebnisse_btw_2025.csv");
                 electionData = electionResult.data;
                 electionHeaders = electionResult.headers;
 
                 // Strukturdaten laden
-                const structuralResult = await loadCSV("strukturdaten.csv");
+                const structuralResult = await loadCSV("elections/GermanFederal2025/strukturdaten.csv");
                 structuralData = structuralResult.data;
                 structuralHeaders = structuralResult.headers;
 
@@ -73,7 +73,7 @@
                 const partySelect = document.getElementById("party-select");
                 partySelect.innerHTML = ''; // Leeren, falls bereits Inhalte da sind
                 electionHeaders.forEach(header => {
-                    if (header !== "Wahlkreis") {
+                    if (header !== "Wahlkreisnummer") {
                         const option = document.createElement("option");
                         option.value = header;
                         option.textContent = header;
@@ -85,7 +85,7 @@
                 const indicatorSelect = document.getElementById("indicator-select");
                 indicatorSelect.innerHTML = ''; // Leeren, falls bereits Inhalte da sind
                 structuralHeaders.forEach(header => {
-                    if (header !== "Wahlkreis") {
+                    if (header !== "Wahlkreisnummer") {
                         const option = document.createElement("option");
                         option.value = header;
                         option.textContent = header;

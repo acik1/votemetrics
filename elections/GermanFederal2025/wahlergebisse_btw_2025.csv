@@ -1,4 +1,4 @@
-Nr,Gebiet,gehört zu,Gewählt,Wählende,Ungültige Stimmen,Gültige Stimmen,SPD,% SPD,CDU,% CDU,GRÜNE,% Grüne,FDP,% FDP,AfD,% AfD,LINKE,% Linke
+Wahlkreisnummer,Gebiet,gehört zu,Gewählt,Wählende,Ungültige Stimmen,Gültige Stimmen,SPD,% SPD,CDU,% CDU,GRÜNE,% Grüne,FDP,% FDP,AfD,% AfD,LINKE,% Linke
 1,Flensburg - Schleswig,1,-,192866,1027,191839,30544,"15,9216843290468%",47683,"24,8557384056422%",30590,"15,9456627693013%",7065,"3,6827756608406%",29267,"15,2560219767618%",15894,"8,28507237840064%"
 2,Nordfriesland - Dithmarschen Nord,1,Christlich Demokratische Union Deutschlands,153755,855,152900,26637,"17,4211903204709%",45300,"29,6272073250491%",18763,"12,2714192282538%",7617,"4,98168737737083%",24564,"16,0654022236756%",9437,"6,17200784826684%"
 3,Steinburg - Dithmarschen Süd,1,Christlich Demokratische Union Deutschlands,146576,805,145771,25645,"17,5926624637274%",42612,"29,2321517997407%",16079,"11,0303146716425%",7447,"5,10869788915491%",29679,"20,3600167385831%",9684,"6,64329667766565%"
