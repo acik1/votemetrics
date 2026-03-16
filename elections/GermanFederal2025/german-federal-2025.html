@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Bundestagswahl 2025 - Korrelationen</title>
+    <title>Bundestagswahl 2025 – Korrelationen</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
@@ -39,48 +39,64 @@
 
         // CSV-Datei laden und Header extrahieren
         async function loadCSV(file) {
-            const response = await fetch(file);
-            const text = await response.text();
-            const parsed = Papa.parse(text, { header: true, dynamicTyping: true });
-            return {
-                data: parsed.data,
-                headers: parsed.meta.fields  // Spaltennamen (Header)
-            };
+            try {
+                const response = await fetch(file);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const text = await response.text();
+                const parsed = Papa.parse(text, { header: true, dynamicTyping: true });
+                return {
+                    data: parsed.data,
+                    headers: parsed.meta.fields
+                };
+            } catch (error) {
+                console.error("Fehler beim Laden der CSV-Datei:", error);
+                return { data: [], headers: [] };
+            }
         }
 
         // Dropdowns mit Daten aus CSV füllen
         async function initDropdowns() {
-            // Wahlergebnisse laden
-            const electionResult = await loadCSV("wahlergebnisse_btw_2025.csv");
-            electionData = electionResult.data;
-            electionHeaders = electionResult.headers;
+            try {
+                // Wahlergebnisse laden
+                const electionResult = await loadCSV("wahlergebnisse_btw_2025.csv");
+                electionData = electionResult.data;
+                electionHeaders = electionResult.headers;
 
-            // Strukturdaten laden
-            const structuralResult = await loadCSV("strukturdaten.csv");
-            structuralData = structuralResult.data;
-            structuralHeaders = structuralResult.headers;
+                // Strukturdaten laden
+                const structuralResult = await loadCSV("strukturdaten.csv");
+                structuralData = structuralResult.data;
+                structuralHeaders = structuralResult.headers;
 
-            // Dropdown für Parteien füllen (ohne "Wahlkreis")
-            const partySelect = document.getElementById("party-select");
-            electionHeaders.forEach(header => {
-                if (header !== "Wahlkreis-Nr.") {  // "Wahlkreis" ist keine Partei
-                    const option = document.createElement("option");
-                    option.value = header;
-                    option.textContent = header;
-                    partySelect.appendChild(option);
-                }
-            });
+                // Dropdown für Parteien füllen
+                const partySelect = document.getElementById("party-select");
+                partySelect.innerHTML = ''; // Leeren, falls bereits Inhalte da sind
+                electionHeaders.forEach(header => {
+                    if (header !== "Wahlkreis") {
+                        const option = document.createElement("option");
+                        option.value = header;
+                        option.textContent = header;
+                        partySelect.appendChild(option);
+                    }
+                });
 
-            // Dropdown für Indikatoren füllen (ohne "Wahlkreis")
-            const indicatorSelect = document.getElementById("indicator-select");
-            structuralHeaders.forEach(header => {
-                if (header !== "Wahlkreis-Nr.") {
-                    const option = document.createElement("option");
-                    option.value = header;
-                    option.textContent = header;
-                    indicatorSelect.appendChild(option);
-                }
-            });
+                // Dropdown für Indikatoren füllen
+                const indicatorSelect = document.getElementById("indicator-select");
+                indicatorSelect.innerHTML = ''; // Leeren, falls bereits Inhalte da sind
+                structuralHeaders.forEach(header => {
+                    if (header !== "Wahlkreis") {
+                        const option = document.createElement("option");
+                        option.value = header;
+                        option.textContent = header;
+                        indicatorSelect.appendChild(option);
+                    }
+                });
+
+                console.log("Dropdowns erfolgreich gefüllt!");
+            } catch (error) {
+                console.error("Fehler beim Initialisieren der Dropdowns:", error);
+            }
         }
 
         // Daten für ausgewählte Partei/Indikator laden
@@ -88,17 +104,30 @@
             const party = document.getElementById("party-select").value;
             const indicator = document.getElementById("indicator-select").value;
 
+            if (!party || !indicator) {
+                alert("Bitte wähle eine Partei und einen Indikator aus.");
+                return;
+            }
+
             // Kombiniere Daten für den Chart
-            const combinedData = electionData.map((wahl, i) => ({
-                wahlkreis: wahl.Wahlkreis,
-                wahlergebnis: wahl[party],
-                indikator: structuralData[i][indicator]
-            }));
+            const combinedData = electionData.map((wahl, i) => {
+                const structuralRow = structuralData.find(row => row.Wahlkreis === wahl.Wahlkreis);
+                return {
+                    wahlkreis: wahl.Wahlkreis,
+                    wahlergebnis: wahl[party],
+                    indikator: structuralRow ? structuralRow[indicator] : null
+                };
+            }).filter(item => item.indikator !== null); // Filtere ungültige Einträge
+
+            if (combinedData.length === 0) {
+                alert("Keine passenden Daten gefunden. Überprüfe die Wahlkreis-Namen in beiden CSV-Dateien.");
+                return;
+            }
 
             drawChart(combinedData, party, indicator);
         }
 
-        // Chart.js-Diagramm erstellen (wie zuvor)
+        // Chart.js-Diagramm erstellen
         function drawChart(data, party, indicator) {
             const ctx = document.getElementById("correlationChart").getContext("2d");
             if (correlationChart) correlationChart.destroy();
@@ -119,17 +148,41 @@
                 },
                 options: {
                     responsive: true,
-                    plugins: { title: { display: true, text: `Korrelation: ${party} vs. ${indicator}` } },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Korrelation: ${party} vs. ${indicator}`
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    const point = data[context.dataIndex];
+                                    return `${point.wahlkreis}: ${point.indikator.toFixed(2)} vs. ${point.wahlergebnis.toFixed(2)}%`;
+                                }
+                            }
+                        }
+                    },
                     scales: {
-                        x: { title: { display: true, text: indicator } },
-                        y: { title: { display: true, text: `Wahlergebnis ${party} (%)` }, beginAtZero: true }
+                        x: {
+                            title: {
+                                display: true,
+                                text: indicator
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: `Wahlergebnis ${party} (%)`
+                            },
+                            beginAtZero: true
+                        }
                     }
                 }
             });
         }
 
         // Seite initialisieren
-        window.onload = initDropdowns;
+        document.addEventListener('DOMContentLoaded', initDropdowns);
     </script>
 </body>
 </html>
