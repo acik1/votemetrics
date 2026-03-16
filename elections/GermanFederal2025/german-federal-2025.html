@@ -1,17 +1,36 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <title>Bundestagswahl 2025 - Korrelationen</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .controls { margin: 20px 0; padding: 10px; background: #f0f0f0; border-radius: 5px; }
-        .chart-container { width: 90%; margin: 0 auto; }
-        select { margin: 0 10px; padding: 5px; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .controls {
+            margin: 20px 0;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+
+        .chart-container {
+            width: 90%;
+            margin: 0 auto;
+        }
+
+        select {
+            margin: 0 10px;
+            padding: 5px;
+        }
     </style>
 </head>
+
 <body>
     <h1>Bundestagswahl 2025: Korrelationen</h1>
     <p>Wähle eine Partei und einen Sozialindikator, um die Daten zu visualisieren.</p>
@@ -59,23 +78,22 @@
         // Dropdowns mit Daten aus CSV füllen
         async function initDropdowns() {
             try {
-                // Wahlergebnisse laden
-                const electionResult = await loadCSV("elections/GermanFederal2025/wahlergebnisse_btw_2025.csv");
+                // CSV-Dateien laden
+                const electionResult = await loadCSV("/elections/GermanFederal2025/wahlergebnisse_btw_2025.csv");
+                const structuralResult = await loadCSV("/elections/GermanFederal2025/strukturdaten.csv");
+
                 electionData = electionResult.data;
-                electionHeaders = electionResult.headers;
-                console.log("Wahlergebnisse:", electionResult.data); // Daten anzeigen
-                console.log("Header Wahlergebnisse:", electionResult.headers); // Header anzeigen
-
-                // Strukturdaten laden
-                const structuralResult = await loadCSV("elections/GermanFederal2025/strukturdaten.csv");
                 structuralData = structuralResult.data;
-                structuralHeaders = structuralResult.headers;
 
-                // Dropdown für Parteien füllen
+                // Debug: Zeige die Header in der Konsole an
+                console.log("Wahlergebnisse-Header:", electionResult.headers);
+                console.log("Strukturdaten-Header:", structuralResult.headers);
+
+                // Dropdown für Parteien füllen (alle Header außer "Wahlkreis")
                 const partySelect = document.getElementById("party-select");
-                partySelect.innerHTML = ''; // Leeren, falls bereits Inhalte da sind
-                electionHeaders.forEach(header => {
-                    if (header !== "Wahlkreisnummer") {
+                partySelect.innerHTML = ''; // Leere bestehende Optionen
+                electionResult.headers.forEach(header => {
+                    if (header !== "Wahlkreis") {
                         const option = document.createElement("option");
                         option.value = header;
                         option.textContent = header;
@@ -83,11 +101,11 @@
                     }
                 });
 
-                // Dropdown für Indikatoren füllen
+                // Dropdown für Indikatoren füllen (alle Header außer "Wahlkreis")
                 const indicatorSelect = document.getElementById("indicator-select");
-                indicatorSelect.innerHTML = ''; // Leeren, falls bereits Inhalte da sind
-                structuralHeaders.forEach(header => {
-                    if (header !== "Wahlkreisnummer") {
+                indicatorSelect.innerHTML = ''; // Leere bestehende Optionen
+                structuralResult.headers.forEach(header => {
+                    if (header !== "Wahlkreis") {
                         const option = document.createElement("option");
                         option.value = header;
                         option.textContent = header;
@@ -97,9 +115,10 @@
 
                 console.log("Dropdowns erfolgreich gefüllt!");
             } catch (error) {
-                console.error("Fehler beim Initialisieren der Dropdowns:", error);
+                console.error("Fehler in initDropdowns:", error);
             }
         }
+
 
         // Daten für ausgewählte Partei/Indikator laden
         function loadData() {
@@ -187,4 +206,5 @@
         document.addEventListener('DOMContentLoaded', initDropdowns);
     </script>
 </body>
+
 </html>
