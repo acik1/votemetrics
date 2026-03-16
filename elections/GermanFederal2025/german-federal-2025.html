@@ -63,7 +63,7 @@
             // Dropdown für Parteien füllen (ohne "Wahlkreis")
             const partySelect = document.getElementById("party-select");
             electionHeaders.forEach(header => {
-                if (header !== "Wahlkreis") {  // "Wahlkreis" ist keine Partei
+                if (header !== "Wahlkreis-Nr.") {  // "Wahlkreis" ist keine Partei
                     const option = document.createElement("option");
                     option.value = header;
                     option.textContent = header;
@@ -74,7 +74,7 @@
             // Dropdown für Indikatoren füllen (ohne "Wahlkreis")
             const indicatorSelect = document.getElementById("indicator-select");
             structuralHeaders.forEach(header => {
-                if (header !== "Wahlkreis") {
+                if (header !== "Wahlkreis-Nr.") {
                     const option = document.createElement("option");
                     option.value = header;
                     option.textContent = header;
