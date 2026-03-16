@@ -1,116 +1,207 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VoteMetrics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 0;
-        }
-        nav {
-            background: #333;
-            padding: 10px;
-            position: relative;
-        }
-        nav a {
-            color: white;
-            text-decoration: none;
-            margin: 0 15px;
-            font-size: 18px;
-        }
-        nav a:hover {
-            text-decoration: underline;
-        }
-        /* Dropdown container */
-        .dropdown {
-            display: inline-block;
-            position: relative;
-        }
-        /* Dropdown menu */
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: #333;
-            min-width: 160px;
-            z-index: 1;
-        }
-        .dropdown-content a {
-            color: white;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-        }
-        .dropdown-content a:hover {
-            background-color: #575757;
-        }
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-        #content {
-            margin-top: 20px;
-        }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+        nav { background: #333; padding: 10px; }
+        nav a { color: white; text-decoration: none; margin: 0 15px; font-size: 18px; }
+        nav a:hover { text-decoration: underline; }
+        .dropdown { display: inline-block; position: relative; }
+        .dropdown-content { display: none; position: absolute; background-color: #333; min-width: 160px; z-index: 1; }
+        .dropdown-content a { color: white; padding: 12px 16px; text-decoration: none; display: block; }
+        .dropdown-content a:hover { background-color: #575757; }
+        .dropdown:hover .dropdown-content { display: block; }
+        #content { margin: 20px; padding: 20px; border: 1px solid #ddd; min-height: 500px; }
+        .chart-container { width: 90%; margin: 0 auto; }
     </style>
 </head>
 <body>
     <nav>
-        <a href="#home" onclick="loadContent('home')">Home</a>
+        <a href="javascript:void(0);" onclick="loadContent('home')">Home</a>
         <div class="dropdown">
-            <a href="javascript:void(0);" onclick="loadContent('data')">Data</a>
+            <a href="javascript:void(0);">Data</a>
             <div class="dropdown-content">
-                <a href="javascript:void(0);" onclick="loadElection('german-federal-2025')">German Federal Election 2025</a>
-                <!-- More elections can be added here -->
+                <a href="javascript:void(0);" onclick="loadContent('german-federal-2025')">German Federal Election 2025</a>
+                <!-- Weitere Wahlen hier -->
             </div>
         </div>
-        <a href="#about" onclick="loadContent('about')">About</a>
+        <a href="javascript:void(0);" onclick="loadContent('about')">About</a>
     </nav>
 
-    <h1>Welcome to VoteMetrics</h1>
-    <p>Explore correlations between election results and social/economic indicators.</p>
-
-    <!-- Dynamic content will load here -->
     <div id="content">
-        <h2>Welcome! Please choose an option from the menu above.</h2>
+        <h1>Welcome to VoteMetrics</h1>
+        <p>Explore correlations between election results and social/economic indicators.</p>
     </div>
 
     <script>
-        function loadContent(page) {
-            const content = document.getElementById('content');
+        // Globale Variable für den Chart
+        let correlationChart;
 
-            // Define the paths to the different sections (elections, about, etc.)
-            const contentPaths = {
-                home: "<h2>Welcome! Please choose an option from the menu above.</h2>",
-                data: `
-                    <h2>Select an Election</h2>
-                    <ul>
-                        <li><a href="javascript:void(0);" onclick="loadElection('german-federal-2025')">German Federal Election 2025</a></li>
-                        <!-- More elections can be added here -->
-                    </ul>
-                `,
-                about: "<h2>About VoteMetrics</h2><p>Details about the website and how it works...</p>"
-            };
+        // Inhalt dynamisch laden
+        async function loadContent(page) {
+            const contentDiv = document.getElementById('content');
 
-            // Set the main content based on the clicked menu item
-            content.innerHTML = contentPaths[page] || contentPaths['home'];
+            if (page === 'home') {
+                contentDiv.innerHTML = `
+                    <h1>Welcome to VoteMetrics</h1>
+                    <p>Explore correlations between election results and social/economic indicators.</p>
+                `;
+            }
+            else if (page === 'german-federal-2025') {
+                contentDiv.innerHTML = `
+                    <h1>Bundestagswahl 2025: Korrelationen</h1>
+                    <p>Wähle eine Partei und einen Sozialindikator, um die Daten zu visualisieren.</p>
+
+                    <div class="controls">
+                        <label for="party-select">Partei:</label>
+                        <select id="party-select"></select>
+
+                        <label for="indicator-select">Sozialindikator:</label>
+                        <select id="indicator-select"></select>
+
+                        <button onclick="loadData()">Daten laden</button>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="correlationChart"></canvas>
+                    </div>
+                `;
+                // Dropdowns und Chart initialisieren
+                await initDropdowns();
+            }
+            else if (page === 'about') {
+                contentDiv.innerHTML = `
+                    <h1>About VoteMetrics</h1>
+                    <p>Dieses Tool visualisiert Korrelationen zwischen Wahlergebnissen und sozioökonomischen Indikatoren.</p>
+                `;
+            }
         }
 
-        function loadElection(electionId) {
-            const content = document.getElementById('content');
-            
-            // Use AJAX to load content dynamically
-            fetch(`elections/GermanFederal2025/german-federal-2025.html`)
-                .then(response => response.text())
-                .then(data => {
-                    // Inject the loaded HTML into the content section of the page
-                    content.innerHTML = data;
-                })
-                .catch(error => {
-                    content.innerHTML = "<p>Failed to load the election data. Please try again later.</p>";
+        // CSV-Datei laden
+        async function loadCSV(file) {
+            const response = await fetch(file);
+            const text = await response.text();
+            return Papa.parse(text, { header: true, delimiter: ",", skipEmptyLines: true });
+        }
+
+        // Dropdowns füllen
+        async function initDropdowns() {
+            try {
+                const electionResult = await loadCSV("/elections/GermanFederal2025/wahlergebnisse_btw_2025.csv");
+                const structuralResult = await loadCSV("/elections/GermanFederal2025/strukturdaten.csv");
+
+                const electionHeaders = electionResult.meta.fields;
+                const structuralHeaders = structuralResult.meta.fields;
+
+                // Dropdown für Parteien füllen
+                const partySelect = document.getElementById("party-select");
+                partySelect.innerHTML = '';
+                electionHeaders.forEach(header => {
+                    if (header !== "Wahlkreis") {
+                        const option = document.createElement("option");
+                        option.value = header;
+                        option.textContent = header;
+                        partySelect.appendChild(option);
+                    }
                 });
+
+                // Dropdown für Indikatoren füllen
+                const indicatorSelect = document.getElementById("indicator-select");
+                indicatorSelect.innerHTML = '';
+                structuralHeaders.forEach(header => {
+                    if (header !== "Wahlkreis") {
+                        const option = document.createElement("option");
+                        option.value = header;
+                        option.textContent = header;
+                        indicatorSelect.appendChild(option);
+                    }
+                });
+
+                console.log("Dropdowns erfolgreich gefüllt!");
+            } catch (error) {
+                console.error("Fehler in initDropdowns:", error);
+                document.getElementById('content').innerHTML += `
+                    <p style="color: red;">Fehler beim Laden der Daten: ${error.message}</p>
+                `;
+            }
         }
+
+        // Daten laden und Chart zeichnen
+        async function loadData() {
+            const party = document.getElementById("party-select").value;
+            const indicator = document.getElementById("indicator-select").value;
+
+            if (!party || !indicator) {
+                alert("Bitte wähle eine Partei und einen Indikator aus.");
+                return;
+            }
+
+            try {
+                const electionResult = await loadCSV("/elections/GermanFederal2025/wahlergebnisse_btw_2025.csv");
+                const structuralResult = await loadCSV("/elections/GermanFederal2025/strukturdaten.csv");
+
+                const electionData = electionResult.data;
+                const structuralData = structuralResult.data;
+
+                const combinedData = electionData.map(wahl => {
+                    const structuralRow = structuralData.find(row => row.Wahlkreis === wahl.Wahlkreis);
+                    return structuralRow ? {
+                        wahlkreis: wahl.Wahlkreis,
+                        wahlergebnis: wahl[party],
+                        indikator: structuralRow[indicator]
+                    } : null;
+                }).filter(item => item !== null);
+
+                if (combinedData.length === 0) {
+                    throw new Error("Keine passenden Daten gefunden. Überprüfe die Wahlkreis-Namen in beiden CSV-Dateien.");
+                }
+
+                drawChart(combinedData, party, indicator);
+            } catch (error) {
+                console.error("Fehler in loadData:", error);
+                alert(`Fehler: ${error.message}`);
+            }
+        }
+
+        // Chart zeichnen
+        function drawChart(data, party, indicator) {
+            const ctx = document.getElementById("correlationChart").getContext("2d");
+            if (correlationChart) correlationChart.destroy();
+
+            correlationChart = new Chart(ctx, {
+                type: "scatter",
+                data: {
+                    datasets: [{
+                        label: `${party} vs. ${indicator}`,
+                        data: data.map(item => ({
+                            x: item.indikator,
+                            y: item.wahlergebnis
+                        })),
+                        backgroundColor: "rgba(75, 192, 192, 0.6)",
+                        borderColor: "rgba(75, 192, 192, 1)",
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: { display: true, text: `Korrelation: ${party} vs. ${indicator}` }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: indicator } },
+                        y: { title: { display: true, text: `Wahlergebnis ${party} (%)` }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // Startseite laden
+        window.onload = () => loadContent('home');
     </script>
 </body>
 </html>
