@@ -6,6 +6,7 @@ import {
 } from './dataLoader.js';
 import { t, loadLanguage, renderLanguageSwitcher, getCurrentLang } from './i18n.js';
 
+// ========== HELPER ==========
 function updatePageText() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
@@ -41,7 +42,6 @@ async function renderHome() {
     document.getElementById('go-to-analyse')?.addEventListener('click', () => {
         document.querySelector('a[data-page="analyse"]').click();
     });
-
 }
 
 async function renderAnalyse() {
@@ -152,10 +152,8 @@ async function loadChart() {
 
     try {
         const data = await loadScatterData(electionId, tableName, partyKey, indicatorKey);
-
         const partyName = partyKey.replace(/_/g, ' ').toUpperCase();
         const indicatorName = indicatorKey.replace(/_/g, ' ');
-
         drawChart(data, partyName, indicatorName, '', '#FDB913');
     } catch (error) {
         console.error('Fehler beim Laden:', error);
@@ -165,29 +163,75 @@ async function loadChart() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'red';
             ctx.font = '14px Arial';
-            ctx.fillText('Fehler beim Laden der Daten', 10, 50);
+            ctx.fillText(t('error_loading') || 'Fehler beim Laden der Daten', 10, 50);
         }
     }
 }
 
 function renderBlog() {
     document.getElementById('content').innerHTML = `
-
+        <div class="page-container">
+            <h1 data-i18n="blog_title">${t('blog_title')}</h1>
+            <p data-i18n="blog_coming">${t('blog_coming')}</p>
+            <div class="blog-teaser">
+                <h3>Coming soon...</h3>
+                <p>Erste Analysen: PKW-Dichte und CDU-Ergebnisse</p>
+            </div>
+        </div>
     `;
+    updatePageText();
 }
 
 function renderFaq() {
     document.getElementById('content').innerHTML = `
-
+        <div class="page-container">
+            <h1 data-i18n="faq_title">${t('faq_title')}</h1>
+            <div class="faq-item">
+                <h3 data-i18n="faq_question1">${t('faq_question1')}</h3>
+                <p data-i18n="faq_answer1">${t('faq_answer1')}</p>
+            </div>
+            <div class="faq-item">
+                <h3 data-i18n="faq_question2">${t('faq_question2')}</h3>
+                <p data-i18n="faq_answer2">${t('faq_answer2')}</p>
+            </div>
+            <div class="faq-item">
+                <h3 data-i18n="faq_question3">${t('faq_question3')}</h3>
+                <p data-i18n="faq_answer3">${t('faq_answer3')}</p>
+            </div>
+        </div>
     `;
+    updatePageText();
 }
 
 function renderKontakt() {
     document.getElementById('content').innerHTML = `
-
+        <div class="page-container">
+            <h1 data-i18n="contact_title">${t('contact_title')}</h1>
+            <p data-i18n="contact_text">${t('contact_text')}</p>
+            <form id="contact-form">
+                <input type="email" placeholder="${t('contact_email_placeholder')}" required>
+                <textarea placeholder="${t('contact_message_placeholder')}" rows="5" required></textarea>
+                <button type="submit">${t('contact_send')}</button>
+            </form>
+            <p class="contact-note">${t('contact_email')} <a href="mailto:info@votemetrics.de">info@votemetrics.de</a></p>
+        </div>
     `;
-
+    updatePageText();
+    document.getElementById('contact-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        alert(t('contact_success'));
+        e.target.reset();
+    });
 }
+
+// ========== SEITEN-REGISTRIERUNG ==========
+const pages = {
+    home: renderHome,
+    analyse: renderAnalyse,
+    blog: renderBlog,
+    faq: renderFaq,
+    kontakt: renderKontakt
+};
 
 // ========== NAVIGATION ==========
 function initNavigation() {
@@ -209,17 +253,14 @@ function initNavigation() {
             }
         });
     });
-
-    renderHome();
 }
+
+// ========== GLOBALE FUNKTION FÜR SPRACHWECHSEL ==========
 window.renderPage = (page) => {
-    if (page === 'home') renderHome();
-    else if (page === 'analyse') renderAnalyse();
-    else if (page === 'blog') renderBlog();
-    else if (page === 'faq') renderFaq();
-    else if (page === 'kontakt') renderKontakt();
+    if (pages[page]) pages[page]();
 };
 
+// ========== INIT ==========
 async function init() {
     await loadLanguage('de');
     renderLanguageSwitcher();
