@@ -6,6 +6,15 @@ import {
 } from './dataLoader.js';
 import { t, loadLanguage, renderLanguageSwitcher, getCurrentLang } from './i18n.js';
 
+// ========== SEITEN-REGISTRIERUNG (MUSS VOR NAVIGATION KOMMEN!) ==========
+const pages = {
+    home: renderHome,
+    analyse: renderAnalyse,
+    blog: renderBlog,
+    faq: renderFaq,
+    kontakt: renderKontakt
+};
+
 // ========== HELPER ==========
 function updatePageText() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -85,6 +94,8 @@ async function initAnalyseDropdowns() {
     const elections = getElections();
     const electionSelect = document.getElementById('election-select');
 
+    if (!electionSelect) return;
+
     electionSelect.innerHTML = elections.map(e =>
         `<option value="${e.id}">${e.flag} ${e.country} ${e.year}</option>`
     ).join('');
@@ -95,12 +106,16 @@ async function initAnalyseDropdowns() {
         await loadChart();
     });
 
-    document.getElementById('category-select').addEventListener('change', async () => {
+    const categorySelect = document.getElementById('category-select');
+    const partySelect = document.getElementById('party-select');
+    const indicatorSelect = document.getElementById('indicator-select');
+
+    if (categorySelect) categorySelect.addEventListener('change', async () => {
         await updateIndicators();
         await loadChart();
     });
-    document.getElementById('party-select').addEventListener('change', () => loadChart());
-    document.getElementById('indicator-select').addEventListener('change', () => loadChart());
+    if (partySelect) partySelect.addEventListener('change', () => loadChart());
+    if (indicatorSelect) indicatorSelect.addEventListener('change', () => loadChart());
 
     await updateCategories();
     await updateParties();
@@ -109,9 +124,12 @@ async function initAnalyseDropdowns() {
 }
 
 async function updateCategories() {
-    const electionId = document.getElementById('election-select').value;
+    const electionId = document.getElementById('election-select')?.value;
+    if (!electionId) return;
+
     const tables = getStructuralTables(electionId);
     const categorySelect = document.getElementById('category-select');
+    if (!categorySelect) return;
 
     categorySelect.innerHTML = tables.map(t =>
         `<option value="${t.table_name}">${t.category}</option>`
@@ -121,9 +139,12 @@ async function updateCategories() {
 }
 
 async function updateParties() {
-    const electionId = document.getElementById('election-select').value;
+    const electionId = document.getElementById('election-select')?.value;
+    if (!electionId) return;
+
     const parties = await getPartyColumns(electionId);
     const partySelect = document.getElementById('party-select');
+    if (!partySelect) return;
 
     partySelect.innerHTML = parties.map(p =>
         `<option value="${p}">${p.replace(/_/g, ' ').toUpperCase()}</option>`
@@ -131,11 +152,12 @@ async function updateParties() {
 }
 
 async function updateIndicators() {
-    const tableName = document.getElementById('category-select').value;
+    const tableName = document.getElementById('category-select')?.value;
     if (!tableName) return;
 
     const indicators = await getIndicatorColumns(tableName);
     const indicatorSelect = document.getElementById('indicator-select');
+    if (!indicatorSelect) return;
 
     indicatorSelect.innerHTML = indicators.map(i =>
         `<option value="${i}">${i.replace(/_/g, ' ')}</option>`
@@ -224,17 +246,9 @@ function renderKontakt() {
     });
 }
 
-// ========== SEITEN-REGISTRIERUNG ==========
-const pages = {
-    home: renderHome,
-    analyse: renderAnalyse,
-    blog: renderBlog,
-    faq: renderFaq,
-    kontakt: renderKontakt
-};
-
 // ========== NAVIGATION ==========
 function initNavigation() {
+    // Menü-Texte mit i18n setzen
     const navLinks = document.querySelectorAll('nav a');
     navLinks.forEach(link => {
         const page = link.dataset.page;
@@ -242,13 +256,15 @@ function initNavigation() {
         link.textContent = t(`nav_${page}`);
     });
 
-    document.querySelectorAll('nav a').forEach(link => {
+    // Event-Listener für Navigation
+    navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             const page = link.dataset.page;
             if (pages[page]) {
                 pages[page]();
-                document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+                // Aktiven Menüpunkt markieren
+                navLinks.forEach(a => a.classList.remove('active'));
                 link.classList.add('active');
             }
         });
@@ -258,6 +274,12 @@ function initNavigation() {
 // ========== GLOBALE FUNKTION FÜR SPRACHWECHSEL ==========
 window.renderPage = (page) => {
     if (pages[page]) pages[page]();
+    // Menü-Texte aktualisieren
+    const navLinks = document.querySelectorAll('nav a');
+    navLinks.forEach(link => {
+        const pageName = link.dataset.page;
+        link.textContent = t(`nav_${pageName}`);
+    });
 };
 
 // ========== INIT ==========
