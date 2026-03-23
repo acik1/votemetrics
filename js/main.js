@@ -12,26 +12,9 @@ async function renderHome() {
         <div class="page-container">
             <h1>Welcome to VoteMetrics</h1>
             <p>Explore correlations between election results and social/economic indicators.</p>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <h3>📊 Korrelationen entdecken</h3>
-                    <p>Finde Zusammenhänge zwischen Wahlergebnissen und sozioökonomischen Faktoren.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>🌍 Mehrere Länder</h3>
-                    <p>Vergleiche Muster zwischen Deutschland, Ungarn und vielen weiteren Ländern.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>📈 Live-Berechnung</h3>
-                    <p>R² und Korrelationskoeffizient werden in Echtzeit berechnet.</p>
-                </div>
-            </div>
-            <button class="cta-button" id="go-to-analyse">Zur Analyse →</button>
-        </div>
+
     `;
-    document.getElementById('go-to-analyse')?.addEventListener('click', () => {
-        document.querySelector('a[data-page="analyse"]').click();
-    });
+
 }
 
 async function renderAnalyse() {
