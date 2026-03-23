@@ -1,0 +1,73 @@
+{
+  "countries": [
+    {
+      "id": "de",
+      "name": "Deutschland",
+      "flag": "🇩🇪",
+      "elections": [
+        {
+          "id": "btw2025",
+          "name": "Bundestagswahl 2025",
+          "table": "german_election_2025",
+          "year": 2025,
+          "type": "federal"
+        }
+      ],
+      "structural_table": "german_structural",
+      "structural_name_column": "wahlkreis_name",
+      "structural_id_column": "wahlkreis_id",
+      "join_column": "wahlkreis_id",
+      "parties": [
+        { "id": "cdu", "name": "CDU/CSU", "color": "#000000" },
+        { "id": "spd", "name": "SPD", "color": "#E3000F" },
+        { "id": "gruene", "name": "Grüne", "color": "#46962B" },
+        { "id": "fdp", "name": "FDP", "color": "#FFED00" },
+        { "id": "linke", "name": "Die Linke", "color": "#BE3075" },
+        { "id": "afd", "name": "AfD", "color": "#009EE0" }
+      ],
+      "indicators": [
+        { "id": "pkw_dichte", "name": "PKW-Bestand/1000 Einwohner", "unit": "pro 1000", "category": "Mobilität" },
+        { "id": "wohnflaeche", "name": "Wohnfläche pro Person (m²)", "unit": "m²", "category": "Wohnen" },
+        { "id": "arbeitslosenquote", "name": "Arbeitslosenquote (%)", "unit": "%", "category": "Arbeitsmarkt" },
+        { "id": "anteil_18_24", "name": "Anteil 18-24 Jährige (%)", "unit": "%", "category": "Demografie" },
+        { "id": "bip_pro_kopf", "name": "BIP pro Kopf (€)", "unit": "€", "category": "Wirtschaft" }
+      ]
+    },
+    {
+      "id": "hu",
+      "name": "Ungarn",
+      "flag": "🇭🇺",
+      "elections": [
+        {
+          "id": "2022",
+          "name": "Parlamentswahl 2022",
+          "table": "hungary_election_2022",
+          "year": 2022,
+          "type": "parliamentary"
+        }
+      ],
+      "structural_table": "hungary_structural_2022",
+      "structural_name_column": "constituency",
+      "structural_id_column": "constituency",
+      "join_column": "oevk",
+      "parties": [
+        { "id": "fidesz_kdnp", "name": "Fidesz-KDNP", "color": "#FDB913" },
+        { "id": "opposition_unity", "name": "Opposition", "color": "#E01111" },
+        { "id": "mkkp", "name": "MKKP", "color": "#2e8b57" },
+        { "id": "mihazank", "name": "Mi Hazánk", "color": "#6b2e6b" }
+      ],
+      "indicators": [
+        { "id": "total_population", "name": "Bevölkerung insgesamt", "unit": "Personen", "category": "Demografie" },
+        { "id": "male", "name": "Männliche Bevölkerung", "unit": "Personen", "category": "Demografie" },
+        { "id": "female", "name": "Weibliche Bevölkerung", "unit": "Personen", "category": "Demografie" },
+        { "id": "age_18_24", "name": "18-24 Jährige", "unit": "Personen", "category": "Alter" },
+        { "id": "age_25_39", "name": "25-39 Jährige", "unit": "Personen", "category": "Alter" },
+        { "id": "age_40_59", "name": "40-59 Jährige", "unit": "Personen", "category": "Alter" },
+        { "id": "education_tertiary", "name": "Hochschulabschluss", "unit": "Personen", "category": "Bildung" },
+        { "id": "employed", "name": "Beschäftigte", "unit": "Personen", "category": "Arbeitsmarkt" },
+        { "id": "unemployed", "name": "Arbeitslose", "unit": "Personen", "category": "Arbeitsmarkt" },
+        { "id": "digital_none", "name": "Keine digitalen Aktivitäten", "unit": "Personen", "category": "Digitalisierung" }
+      ]
+    }
+  ]
+}

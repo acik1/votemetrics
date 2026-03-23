@@ -1,25 +1,89 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VoteMetrics</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-        nav { background: #333; padding: 10px; }
-        nav a { color: white; text-decoration: none; margin: 0 15px; font-size: 18px; }
-        nav a:hover { text-decoration: underline; }
-        .dropdown { display: inline-block; position: relative; }
-        .dropdown-content { display: none; position: absolute; background-color: #333; min-width: 160px; z-index: 1; }
-        .dropdown-content a { color: white; padding: 12px 16px; text-decoration: none; display: block; }
-        .dropdown-content a:hover { background-color: #575757; }
-        .dropdown:hover .dropdown-content { display: block; }
-        #content { margin: 20px; padding: 20px; border: 1px solid #ddd; min-height: 500px; }
-        .chart-container { width: 90%; margin: 0 auto; }
-        .controls { margin: 20px 0; padding: 10px; background: #f0f0f0; border-radius: 5px; }
-        select { margin: 0 10px; padding: 5px; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav {
+            background: #333;
+            padding: 10px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 18px;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        .dropdown {
+            display: inline-block;
+            position: relative;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #333;
+            min-width: 160px;
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            color: white;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #575757;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        #content {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            min-height: 500px;
+        }
+
+        .chart-container {
+            width: 90%;
+            margin: 0 auto;
+        }
+
+        .controls {
+            margin: 20px 0;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+
+        select {
+            margin: 0 10px;
+            padding: 5px;
+        }
+
         .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #3498db;
@@ -29,19 +93,17 @@
             animation: spin 1s linear infinite;
             margin: 20px auto;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
+
 <body>
     <nav>
         <a href="javascript:void(0);" onclick="loadContent('home')">Home</a>
         <div class="dropdown">
             <a href="javascript:void(0);">Data</a>
             <div class="dropdown-content">
-                <a href="javascript:void(0);" onclick="loadContent('german-federal-2025')">German Federal Election 2025</a>
+                <a href="javascript:void(0);" onclick="loadContent('german-federal-2025')">German Federal Election
+                    2025</a>
             </div>
         </div>
         <a href="javascript:void(0);" onclick="loadContent('about')">About</a>
@@ -53,6 +115,11 @@
     </div>
 
     <script>
+    // Supabase Konfiguration
+    const SUPABASE_URL = 'https://dein-projekt.supabase.co';
+    const SUPABASE_ANON_KEY = 'dein-anon-key';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let correlationChart;
 
         async function loadContent(page) {
@@ -78,7 +145,6 @@
                     </div>
 
                     <div class="chart-container">
-                        <div class="loader">Lade Daten...</div>
                         <canvas id="correlationChart"></canvas>
                     </div>
                 `;
@@ -93,6 +159,7 @@
         }
 
         async function loadCSV(file) {
+            console.log(`loadCSV() called`);
             const response = await fetch(file);
             const text = await response.text();
             return Papa.parse(text, { header: true, delimiter: ",", skipEmptyLines: true });
@@ -100,6 +167,7 @@
 
         async function initDropdowns() {
             try {
+                console.log(`initDropdowns() called`);
                 const electionResult = await loadCSV("/elections/GermanFederal2025/wahlergebnisse_btw_2025.csv");
                 const structuralResult = await loadCSV("/elections/GermanFederal2025/strukturdaten.csv");
 
@@ -112,7 +180,7 @@
                 // Dropdown für Parteien füllen
                 partySelect.innerHTML = '';
                 electionHeaders.forEach(header => {
-                    if (header !== "Wahlkreis") {
+                    if (header !== "Wahlkreisnummer") {
                         const option = document.createElement("option");
                         option.value = header;
                         option.textContent = header;
@@ -123,7 +191,7 @@
                 // Dropdown für Indikatoren füllen
                 indicatorSelect.innerHTML = '';
                 structuralHeaders.forEach(header => {
-                    if (header !== "Wahlkreis") {
+                    if (header !== "Wahlkreisnummer") {
                         const option = document.createElement("option");
                         option.value = header;
                         option.textContent = header;
@@ -151,6 +219,7 @@
         }
 
         async function loadData() {
+            console.log(`loadData() called`);
             const partySelect = document.getElementById("party-select");
             const indicatorSelect = document.getElementById("indicator-select");
 
@@ -164,23 +233,37 @@
             try {
                 const chartContainer = document.querySelector('.chart-container');
                 chartContainer.innerHTML = `
-                    <div class="loader">Lade Daten...</div>
-                    <canvas id="correlationChart"></canvas>
-                `;
+            <canvas id="correlationChart"></canvas>
+        `;
 
                 const electionResult = await loadCSV("/elections/GermanFederal2025/wahlergebnisse_btw_2025.csv");
                 const structuralResult = await loadCSV("/elections/GermanFederal2025/strukturdaten.csv");
-
                 const electionData = electionResult.data;
                 const structuralData = structuralResult.data;
 
                 const combinedData = electionData.map(wahl => {
-                    const structuralRow = structuralData.find(row => row.Wahlkreis === wahl.Wahlkreis);
-                    return structuralRow ? {
-                        wahlkreis: wahl.Wahlkreis,
-                        wahlergebnis: wahl[party],
-                        indikator: structuralRow[indicator]
-                    } : null;
+                    const structuralRow = structuralData.find(row => row.Wahlkreisnummer === wahl.Wahlkreisnummer);
+                    if (!structuralRow) return null;
+
+                    // DAS ist die wichtige Änderung: Konvertiere Strings zu Zahlen
+                    const wahlergebnis = parseFloat(wahl[party]?.replace(',', '.'));
+                    const indikator = parseFloat(structuralRow[indicator]?.replace(',', '.'));
+
+                    // Debug-Ausgabe, um zu sehen was ankommt
+                    console.log(`Rohwert: "${wahl[party]}" -> Geparst: ${wahlergebnis}`);
+                    console.log(`Rohwert: "${structuralRow[indicator]}" -> Geparst: ${indikator}`);
+
+                    // Nur gültige Zahlenpaare behalten
+                    if (isNaN(wahlergebnis) || isNaN(indikator)) {
+                        return null;
+                    }
+
+                    return {
+                        wahlkreis: wahl.Wahlkreisnummer,
+                        wahlergebnis: wahlergebnis,
+                        indikator: indikator
+                    };
+
                 }).filter(item => item !== null);
 
                 if (combinedData.length === 0) {
@@ -191,15 +274,20 @@
             } catch (error) {
                 console.error("Fehler in loadData:", error);
                 document.querySelector('.chart-container').innerHTML = `
-                    <p style="color: red;">Fehler: ${error.message}</p>
-                    <canvas id="correlationChart"></canvas>
-                `;
+            <p style="color: red;">Fehler: ${error.message}</p>
+            <canvas id="correlationChart"></canvas>
+        `;
             }
         }
 
         function drawChart(data, party, indicator) {
+            console.log(`drawChart() called`);
             const ctx = document.getElementById("correlationChart").getContext("2d");
             if (correlationChart) correlationChart.destroy();
+
+            // R-Wert berechnen
+            const rValue = calculateCorrelation(data.map(d => d.indikator), data.map(d => d.wahlergebnis));
+            const rSquared = (rValue * rValue).toFixed(3);
 
             correlationChart = new Chart(ctx, {
                 type: "scatter",
@@ -218,7 +306,21 @@
                 options: {
                     responsive: true,
                     plugins: {
-                        title: { display: true, text: `Korrelation: ${party} vs. ${indicator}` }
+                        title: {
+                            display: true,
+                            text: `Korrelation: ${party} vs. ${indicator}`
+                        },
+                        subtitle: {
+                            display: true,
+                            text: `R = ${rValue.toFixed(3)} | R² = ${rSquared}`,
+                            position: 'top',
+                            align: 'end',
+                            color: 'rgba(0, 0, 0, 0.7)',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        }
                     },
                     scales: {
                         x: { title: { display: true, text: indicator } },
@@ -226,9 +328,37 @@
                     }
                 }
             });
+            console.log(`Chart drawn successfully`);
+        }
+
+        // Funktion zur Berechnung der Pearson-Korrelation
+        function calculateCorrelation(x, y) {
+            const n = x.length;
+
+            // Mittelwerte berechnen
+            const meanX = x.reduce((a, b) => a + b, 0) / n;
+            const meanY = y.reduce((a, b) => a + b, 0) / n;
+
+            // Summen für Korrelation berechnen
+            let sumXY = 0;
+            let sumX2 = 0;
+            let sumY2 = 0;
+
+            for (let i = 0; i < n; i++) {
+                const xDiff = x[i] - meanX;
+                const yDiff = y[i] - meanY;
+                sumXY += xDiff * yDiff;
+                sumX2 += xDiff * xDiff;
+                sumY2 += yDiff * yDiff;
+            }
+
+            // Korrelation berechnen
+            const correlation = sumXY / Math.sqrt(sumX2 * sumY2);
+            return correlation;
         }
 
         window.onload = () => loadContent('home');
     </script>
 </body>
+
 </html>

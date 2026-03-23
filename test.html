@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Supabase Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+    <h1>Supabase Verbindungstest</h1>
+    <div id="result">Test läuft...</div>
+
+    <script>
+        const SUPABASE_URL = 'https://mpdvfqunpgvzdcfxsayt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wZHZmcXVucGd2emRjZnhzYXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDg2MjMsImV4cCI6MjA4OTQyNDYyM30.B6C_zOKsrAovJblW5uigj-ItggRDWcfzgUubIe5zgW0';
+        
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        async function testConnection() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Test läuft...<br>';
+
+            try {
+                // 1. Prüfen, ob die Tabelle existiert und wie viele Zeilen
+                const { count, error: countError } = await supabaseClient
+                    .from('hungary_election_2022')
+                    .select('*', { count: 'exact', head: true });
+                
+                if (countError) {
+                    resultDiv.innerHTML += `<p style="color: red;">❌ Fehler beim Zählen: ${countError.message}</p>`;
+                } else {
+                    resultDiv.innerHTML += `<p>✅ Tabelle hat ${count} Zeilen</p>`;
+                }
+                
+                // 2. Versuche, alle Spaltennamen zu bekommen (geht nur über eine Abfrage)
+                const { data: sample, error: sampleError } = await supabaseClient
+                    .from('hungary_election_2022')
+                    .select('*')
+                    .limit(1);
+                
+                if (sampleError) {
+                    resultDiv.innerHTML += `<p style="color: red;">❌ Keine Daten: ${sampleError.message}</p>`;
+                } else if (sample && sample.length > 0) {
+                    resultDiv.innerHTML += `<p>✅ Erste Zeile gefunden. Spalten: ${Object.keys(sample[0]).join(', ')}</p>`;
+                    resultDiv.innerHTML += `<pre>${JSON.stringify(sample[0], null, 2)}</pre>`;
+                } else {
+                    resultDiv.innerHTML += `<p>⚠️ Tabelle ist leer</p>`;
+                }
+                
+                // 3. Versuche spezifisch nach Wahlkreis-Spalten zu suchen
+                const possibleColumns = ['oevk', 'constituency', 'wahlkreis', 'oevk_name', 'district'];
+                for (const col of possibleColumns) {
+                    const { data, error } = await supabaseClient
+                        .from('hungary_election_2022')
+                        .select(col)
+                        .limit(1);
+                    
+                    if (!error && data && data.length > 0) {
+                        resultDiv.innerHTML += `<p style="color: green;">✅ Spalte '${col}' existiert und hat Wert: ${data[0][col]}</p>`;
+                    } else if (error && error.message.includes('does not exist')) {
+                        resultDiv.innerHTML += `<p>❌ Spalte '${col}' existiert nicht</p>`;
+                    }
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML += `<p style="color: red;">❌ Catch-Fehler: ${error.message}</p>`;
+                console.error('Details:', error);
+            }
+        }
+        
+        testConnection();
+    </script>
+</body>
+
+</html>
