@@ -54,8 +54,9 @@ async function renderHome() {
 }
 
 async function renderAnalyse() {
+    console.log("1. renderAnalyse gestartet");
     await loadMetadata();
-
+    console.log("2. loadMetadata fertig, metadata:", getElections());
     const contentDiv = document.getElementById('content');
     contentDiv.innerHTML = `
         <div class="page-container">
@@ -86,20 +87,26 @@ async function renderAnalyse() {
             </div>
         </div>
     `;
+    console.log("3. HTML eingefügt");
     updatePageText();
+    console.log("4. updatePageText fertig");
     await initAnalyseDropdowns();
+    console.log("5. initAnalyseDropdowns fertig");
 }
 
 async function initAnalyseDropdowns() {
+    console.log("initAnalyseDropdowns gestartet");
     const elections = getElections();
+    console.log("Elections aus getElections():", elections);
     const electionSelect = document.getElementById('election-select');
+    console.log("electionSelect Element:", electionSelect);
 
     if (!electionSelect) return;
 
     electionSelect.innerHTML = elections.map(e =>
         `<option value="${e.id}">${e.flag} ${e.country} ${e.year}</option>`
     ).join('');
-
+    console.log("electionSelect gefüllt mit:", electionSelect.innerHTML);
     electionSelect.addEventListener('change', async () => {
         await updateCategories();
         await updateParties();
@@ -139,15 +146,13 @@ async function updateCategories() {
 }
 
 async function updateParties() {
-    const electionId = document.getElementById('election-select')?.value;
-    if (!electionId) return;
-
+    const electionId = document.getElementById('election-select').value;
     const parties = await getPartyColumns(electionId);
     const partySelect = document.getElementById('party-select');
-    if (!partySelect) return;
-
-    partySelect.innerHTML = parties.map(p =>
-        `<option value="${p}">${p.replace(/_/g, ' ').toUpperCase()}</option>`
+    
+    // Entferne '_list' aus dem Anzeigenamen für die UI
+    partySelect.innerHTML = parties.map(p => 
+        `<option value="${p}">${p.replace(/_list$/, '').replace(/_/g, ' ').toUpperCase()}</option>`
     ).join('');
 }
 
@@ -170,23 +175,36 @@ async function loadChart() {
     const partyKey = document.getElementById('party-select')?.value;
     const indicatorKey = document.getElementById('indicator-select')?.value;
 
-    if (!electionId || !tableName || !partyKey || !indicatorKey) return;
+    console.log("🔍 loadChart gestartet");
+    console.log("   electionId:", electionId);
+    console.log("   tableName:", tableName);
+    console.log("   partyKey:", partyKey);
+    console.log("   indicatorKey:", indicatorKey);
+
+    if (!electionId || !tableName || !partyKey || !indicatorKey) {
+        console.warn("⚠️ Nicht alle Dropdowns haben Werte");
+        return;
+    }
 
     try {
         const data = await loadScatterData(electionId, tableName, partyKey, indicatorKey);
+        console.log("📊 Daten von loadScatterData:", data);
+        console.log("   Anzahl Datenpunkte:", data?.length);
+        
+        if (!data || data.length === 0) {
+            console.warn("⚠️ Keine Daten zurückgekommen");
+            return;
+        }
+        
         const partyName = partyKey.replace(/_/g, ' ').toUpperCase();
         const indicatorName = indicatorKey.replace(/_/g, ' ');
-        drawChart(data, partyName, indicatorName, '', '#FDB913');
+        
+        console.log("🎨 Zeichne Chart mit", data.length, "Punkten");
+        await drawChart(data, partyName, indicatorName, '', '#FDB913');
+        
     } catch (error) {
-        console.error('Fehler beim Laden:', error);
-        const canvas = document.getElementById('correlationChart');
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'red';
-            ctx.font = '14px Arial';
-            ctx.fillText(t('error_loading') || 'Fehler beim Laden der Daten', 10, 50);
-        }
+        console.error('❌ Fehler beim Laden:', error);
+        // ... error handling
     }
 }
 
