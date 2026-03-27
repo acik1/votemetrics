@@ -65,7 +65,7 @@ export async function drawChart(data, partyName, indicatorName, indicatorUnit, p
 
         console.log("Chart wird erstellt mit", data.length, "Punkten");
 
-        correlationChart = new Chart(ctx, {
+        correlationChart = new ChartJS(ctx, {
             type: "scatter",
             data: {
                 datasets: [{
