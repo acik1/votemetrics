@@ -179,3 +179,39 @@ h1 {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+.correlation-matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.correlation-matrix th,
+.correlation-matrix td {
+    padding: 8px 12px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
+.correlation-matrix th {
+    background: #f5f5f5;
+    font-weight: bold;
+}
+
+.matrix-cell {
+    transition: transform 0.1s;
+}
+
+.matrix-cell:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    font-weight: bold;
+}
+
+.sortable-header {
+    cursor: pointer;
+    user-select: none; /* Verhindert, dass der Text beim Klicken markiert wird */
+}
+.sortable-header:hover {
+    background-color: #e0e0e0; /* Leichter Hover-Effekt */
+}
