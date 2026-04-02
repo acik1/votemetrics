@@ -21,21 +21,6 @@ async function renderHome() {
     contentDiv.innerHTML = `
         <div class="page-container">
             <h1>Welcome to VoteMetrics</h1>
-            <p>Explore correlations between election results and socio-economic indicators.</p>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <h3>📊 Discover Correlations</h3>
-                    <p>Find connections between election results and socio-economic factors.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>🌍 Multiple Countries</h3>
-                    <p>Compare patterns across Hungary, Germany, and more.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>📈 Live Calculation</h3>
-                    <p>R² and correlation coefficient calculated in real-time.</p>
-                </div>
-            </div>
             <button class="cta-button" id="go-to-analyse">Analysis →</button>
         </div>
     `;
@@ -59,14 +44,15 @@ async function renderAnalyse() {
                     <label>🌍 Country / Election:</label>
                     <select id="election-select"></select>
                 </div>
+                    <div class="control-group">
+                    <label>🎯 Party:</label>
+                    <select id="party-select"></select>
+                </div>
                 <div class="control-group">
                     <label>📂 Data Category:</label>
                     <select id="category-select"></select>
                 </div>
-                <div class="control-group">
-                    <label>🎯 Party:</label>
-                    <select id="party-select"></select>
-                </div>
+
                 <div class="control-group">
                     <label>📊 Indicator:</label>
                     <select id="indicator-select"></select>

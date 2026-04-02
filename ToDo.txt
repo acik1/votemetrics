@@ -1,15 +1,12 @@
 - Logo
 - p-value
-- translate all to english in DB
 - radar charts
 - sources
-
-
-const SUPABASE_URL = 'https://mpdvfqunpgvzdcfxsayt.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wZHZmcXVucGd2emRjZnhzYXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDg2MjMsImV4cCI6MjA4OTQyNDYyM30.B6C_zOKsrAovJblW5uigj-ItggRDWcfzgUubIe5zgW0';
-
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-sb.from('hungary_2022_person').select('constituency').limit(1)
-    .then(r => console.log('Ergebnis:', r))
-    .catch(e => console.error('Fehler:', e));
+- faq (was ist korrelation? wie berechnet? was drücken sie aus?)
+- spaltenüberschriften
+- totals ausblenden
+- mehr zahlen zu anteilen umrechnen
+- unterschied zu list2 verstehen
+- kontaktinformationen mit echter adresse
+- erster blogeintrag?
+- matrix richtig vernüpfen
