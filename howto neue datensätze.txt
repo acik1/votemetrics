@@ -1,0 +1,43 @@
+# 📋 Checkliste: Neue Daten hinzufügen
+
+## Phase 1: Vorbereitung
+
+- [ ] 1. Datenquelle prüfen (Herkunft, Lizenz, Format)
+- [ ] 2. Spaltennamen vereinheitlichen (`land_jahr_typ`)
+- [ ] 3. Daten bereinigen (UTF-8, Dezimaltrenner, fehlende Werte)
+- [ ] 4. Daten normalisieren (absolute Zahlen → Prozente)
+- [ ] 5. Dokumentation (Quellen, Methodik)
+
+## Phase 2: Strukturdaten (Indikatoren)
+
+- [ ] 6. Tabelle anlegen (`CREATE TABLE ...`)
+- [ ] 7. Daten importieren (Supabase CSV-Import oder Python)
+- [ ] 8. Spalten prüfen (`SELECT column_name FROM information_schema...`)
+- [ ] 9. Indikatoren in `indicators_metadata` eintragen
+- [ ] 10. Qualitätscheck (`SELECT COUNT(*) FROM ...`)
+
+## Phase 3: Wahlergebnisse
+
+- [ ] 11. Election-Tabelle anlegen (`CREATE TABLE ...`)
+- [ ] 12. Daten importieren (Supabase CSV-Import oder Python)
+- [ ] 13. View für Prozentwerte erstellen (`CREATE VIEW ..._list AS ...`)
+- [ ] 14. Parteien in `party_metadata` eintragen
+- [ ] 15. Qualitätscheck (`SELECT COUNT(*) FROM ...`)
+
+## Phase 4: Metadaten aktualisieren
+
+- [ ] 16. Wahl in `elections_metadata` eintragen
+- [ ] 17. Strukturtabellen in `structural_tables` eintragen
+- [ ] 18. Quellen in `data_sources` eintragen
+
+## Phase 5: Korrelationen berechnen
+
+- [ ] 19. Python-Skript `correlationMatrix.py` anpassen und ausführen
+- [ ] 20. Ergebnisse in `correlations_matrix` speichern (automatisch)
+- [ ] 21. Qualitätscheck (`SELECT COUNT(*) FROM correlations_matrix ...`)
+
+## Phase 6: Frontend
+
+- [ ] 22. Nichts tun! (Frontend liest aus Metadaten)
+- [ ] 23. Testen (Website öffnen, Land/Wahl auswählen)
+- [ ] 24. Screenshot/Vergleich mit erwarteten Werten

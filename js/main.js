@@ -32,7 +32,7 @@ async function renderHome() {
 async function renderAnalyse() {
     console.log("1. renderAnalyse gestartet");
     await loadMetadata();
-    console.log("2. loadMetadata fertig, metadata:", getElections());
+
     const contentDiv = document.getElementById('content');
     contentDiv.innerHTML = `
         <div class="page-container">
@@ -44,15 +44,14 @@ async function renderAnalyse() {
                     <label>🌍 Country / Election:</label>
                     <select id="election-select"></select>
                 </div>
-                    <div class="control-group">
-                    <label>🎯 Party:</label>
-                    <select id="party-select"></select>
-                </div>
                 <div class="control-group">
                     <label>📂 Data Category:</label>
                     <select id="category-select"></select>
                 </div>
-
+                <div class="control-group">
+                    <label>🎯 Party:</label>
+                    <select id="party-select"></select>
+                </div>
                 <div class="control-group">
                     <label>📊 Indicator:</label>
                     <select id="indicator-select"></select>
@@ -64,27 +63,86 @@ async function renderAnalyse() {
             </div>
         </div>
     `;
-    console.log("3. HTML eingefügt");
-    await initAnalyseDropdowns();
-    console.log("4. initAnalyseDropdowns fertig");
+
+    // Dropdowns initialisieren (OHNE automatisches Laden)
+    await initAnalyseDropdowns(true);  // true = skip initial load
+
+    // ========== VORAUSGEWÄHLTE WERTE AUS MATRIX ÜBERNEHMEN ==========
+    if (window.selectedParty && window.selectedIndicator) {
+        console.log("Vorausgewählte Werte gefunden:", window.selectedParty, window.selectedIndicator);
+
+        // Election auswählen
+        const electionSelect = document.getElementById('election-select');
+        if (window.selectedElection) {
+            for (let i = 0; i < electionSelect.options.length; i++) {
+                if (electionSelect.options[i].value === window.selectedElection) {
+                    electionSelect.selectedIndex = i;
+                    await updateCategories();
+                    break;
+                }
+            }
+        }
+
+        // Kategorie auswählen
+        const categorySelect = document.getElementById('category-select');
+        if (window.selectedTable) {
+            for (let i = 0; i < categorySelect.options.length; i++) {
+                if (categorySelect.options[i].value === window.selectedTable) {
+                    categorySelect.selectedIndex = i;
+                    await updateIndicators();
+                    break;
+                }
+            }
+        }
+
+        // Partei auswählen
+        const partySelect = document.getElementById('party-select');
+        for (let i = 0; i < partySelect.options.length; i++) {
+            if (partySelect.options[i].value === window.selectedParty) {
+                partySelect.selectedIndex = i;
+                break;
+            }
+        }
+
+        // Indikator auswählen
+        const indicatorSelect = document.getElementById('indicator-select');
+        for (let i = 0; i < indicatorSelect.options.length; i++) {
+            if (indicatorSelect.options[i].value === window.selectedIndicator) {
+                indicatorSelect.selectedIndex = i;
+                break;
+            }
+        }
+
+        // Jetzt erst den Chart laden
+        await loadChart();
+
+        // Auswahl zurücksetzen
+        window.selectedParty = null;
+        window.selectedIndicator = null;
+        window.selectedTable = null;
+        window.selectedElection = null;
+    } else {
+        // Keine vorausgewählten Werte → Standard-Chart laden
+        await loadChart();
+    }
 }
 
-async function initAnalyseDropdowns() {
+async function initAnalyseDropdowns(skipInitialLoad = true) {
     console.log("initAnalyseDropdowns gestartet");
     const elections = getElections();
-    console.log("Elections aus getElections():", elections);
     const electionSelect = document.getElementById('election-select');
-    console.log("electionSelect Element:", electionSelect);
 
     if (!electionSelect) return;
 
     electionSelect.innerHTML = elections.map(e =>
         `<option value="${e.id}">${e.flag} ${e.country} ${e.year}</option>`
     ).join('');
-    console.log("electionSelect gefüllt mit:", electionSelect.innerHTML);
+
+    // Event-Listener immer aktiv (damit Änderungen funktionieren)
     electionSelect.addEventListener('change', async () => {
         await updateCategories();
         await updateParties();
+        await updateIndicators();
         await loadChart();
     });
 
@@ -102,9 +160,12 @@ async function initAnalyseDropdowns() {
     await updateCategories();
     await updateParties();
     await updateIndicators();
-    await loadChart();
-}
 
+    // Nur beim ersten Mal NICHT automatisch laden (wenn skipInitialLoad = true)
+    if (!skipInitialLoad) {
+        await loadChart();
+    }
+}
 async function updateCategories() {
     const electionId = document.getElementById('election-select')?.value;
     if (!electionId) return;
@@ -123,10 +184,10 @@ async function updateCategories() {
 async function updateParties() {
     const electionId = document.getElementById('election-select').value;
     const parties = await getPartyColumns(electionId);
-    const partySelect = document.getElementById('party-select');
 
+    const partySelect = document.getElementById('party-select');
     partySelect.innerHTML = parties.map(p =>
-        `<option value="${p}">${p.replace(/_list$/, '').replace(/_/g, ' ').toUpperCase()}</option>`
+        `<option value="${p.column_name}">${p.display_name}</option>`
     ).join('');
 }
 
@@ -134,12 +195,23 @@ async function updateIndicators() {
     const tableName = document.getElementById('category-select')?.value;
     if (!tableName) return;
 
-    const indicators = await getIndicatorColumns(tableName);
+    // Lade die Indikatoren mit ihren Anzeigenamen aus indicators_metadata
+    const { data: indicators, error } = await supabase
+        .from('indicators_metadata')
+        .select('indicator_key, indicator_name, unit')
+        .eq('table_name', tableName)
+        .order('indicator_name');
+
+    if (error) {
+        console.error("Fehler beim Laden der Indikatoren:", error);
+        return;
+    }
+
     const indicatorSelect = document.getElementById('indicator-select');
     if (!indicatorSelect) return;
 
     indicatorSelect.innerHTML = indicators.map(i =>
-        `<option value="${i}">${i.replace(/_/g, ' ')}</option>`
+        `<option value="${i.indicator_key}">${i.indicator_name} (${i.unit})</option>`
     ).join('');
 }
 
@@ -268,12 +340,12 @@ async function renderMatrix() {
 
     await loadMatrix();
 }
-
 async function loadMatrix() {
     const electionId = document.getElementById('matrix-election-select').value;
     if (!electionId) return;
 
     try {
+        // 1. Korrelationen laden
         const { data: correlations, error: corrError } = await supabase
             .from('correlations_matrix')
             .select('*')
@@ -287,9 +359,53 @@ async function loadMatrix() {
             return;
         }
 
-        let parties = [...new Map(correlations.map(c => [c.party_key, c.party_key])).keys()];
+        // 2. Metadaten für schöne Anzeigenamen laden
+        const { data: indicatorsMeta } = await supabase
+            .from('indicators_metadata')
+            .select('indicator_key, indicator_name, unit')
+            .eq('election_id', electionId);
+
+        const indicatorNameMap = new Map();
+        const indicatorUnitMap = new Map();
+        indicatorsMeta?.forEach(meta => {
+            indicatorNameMap.set(meta.indicator_key, meta.indicator_name);
+            indicatorUnitMap.set(meta.indicator_key, meta.unit);
+        });
+
+        // 3. Election-Tabelle für Parteien-Reihenfolge laden
+        const { data: electionMeta } = await supabase
+            .from('elections_metadata')
+            .select('election_table')
+            .eq('id', electionId)
+            .single();
+
+        const { data: electionSample } = await supabase
+            .from(electionMeta.election_table)
+            .select('*')
+            .limit(1);
+
+        // Parteien in originaler Reihenfolge
+        const allColumns = Object.keys(electionSample[0]);
+        const parties = allColumns.filter(col =>
+            col.endsWith('_list') &&
+            !['valid_votes_list', 'valid_votes_pct_list'].includes(col)
+        );
+
+        // 4. Party-Metadaten für schöne Namen laden
+        const { data: partyMeta } = await supabase
+            .from('party_metadata')
+            .select('column_name, display_name')
+            .eq('election_id', electionId);
+
+        const partyNameMap = new Map();
+        partyMeta?.forEach(p => {
+            partyNameMap.set(p.column_name, p.display_name);
+        });
+
+        // 5. Indikatoren aus Korrelationen
         const indicators = [...new Map(correlations.map(c => [c.indicator_key, c.indicator_key])).keys()];
 
+        // Sortierzustand
         let currentSortColumn = null;
         let currentSortDirection = 'desc';
 
@@ -316,16 +432,21 @@ async function loadMatrix() {
             let html = '<table class="correlation-matrix"><thead><tr><th></th>';
 
             parties.forEach(party => {
-                const partyDisplay = party.replace('_list', '').replace(/_/g, ' ').toUpperCase();
+                // Schöner Name aus party_metadata, fallback auf Original
+                const partyDisplay = partyNameMap.get(party) || party;
                 const sortIndicator = (currentSortColumn === party)
                     ? (currentSortDirection === 'asc' ? ' ↑' : ' ↓')
                     : '';
                 html += `<th data-party="${party}" class="sortable-header">${partyDisplay}${sortIndicator}</th>`;
             });
-            html += '</tr></thead><tbody>';
+            html += '<tr></thead><tbody>';
 
             sortedIndicators.forEach(indicator => {
-                html += `<tr><td style="font-weight: bold;">${indicator.replace(/_/g, ' ')}</td>`;
+                const displayName = indicatorNameMap.get(indicator) || indicator.replace(/_/g, ' ');
+                const unit = indicatorUnitMap.get(indicator) || '';
+                const displayText = unit ? `${displayName} (${unit})` : displayName;
+
+                html += `<tr><td style="font-weight: bold;">${displayText}</td>`;
 
                 parties.forEach(party => {
                     const corr = correlations.find(c =>
@@ -333,10 +454,16 @@ async function loadMatrix() {
                         c.indicator_key === indicator
                     );
                     const r = corr?.r_value || 0;
-                    const intensity = Math.min(Math.abs(r), 1);
-                    const color = r > 0
-                        ? `rgba(75, 192, 192, ${intensity * 0.8 + 0.2})`
-                        : `rgba(255, 99, 132, ${intensity * 0.8 + 0.2})`;
+                    const absR = Math.abs(r);
+                    let intensity = 0;
+                    let color = 'rgba(236, 236, 236, 0.5)';  // Neutral
+
+                    if (absR >= 0.15) {
+                        intensity = Math.min((absR - 0.15) / 0.85, 1) * 0.7 + 0.2;
+                        color = r > 0
+                            ? `rgba(75, 192, 192, ${intensity})`
+                            : `rgba(255, 99, 132, ${intensity})`;
+                    }
                     const displayR = r.toFixed(2);
 
                     html += `<td class="matrix-cell" 
@@ -354,6 +481,7 @@ async function loadMatrix() {
             html += '</tbody></table>';
             document.getElementById('matrix-container').innerHTML = html;
 
+            // Event-Listener
             document.querySelectorAll('.matrix-cell').forEach(cell => {
                 cell.addEventListener('click', () => {
                     window.selectedParty = cell.dataset.party;

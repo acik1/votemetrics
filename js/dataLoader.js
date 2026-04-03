@@ -129,24 +129,16 @@ export async function loadScatterData(electionId, tableName, partyKey, indicator
 }
 
 export async function getPartyColumns(electionId) {
-    const election = electionsMetadata.find(e => e.id === electionId);
-    if (!election) return [];
-
+    // Aus party_metadata lesen
     const { data, error } = await supabase
-        .from(election.election_table)
-        .select('*')
-        .limit(1);
-
-    if (error || !data || data.length === 0) return [];
-
-    // Alle Spalten außer Join-Spalte und Hilfsspalten
-    const excludeColumns = [
-        election.join_column_election,
-        'valid_votes_list',
-        'valid_votes_pct_list'
-    ];
-
-    return Object.keys(data[0]).filter(key => !excludeColumns.includes(key));
+        .from('party_metadata')
+        .select('column_name, display_name, color, display_order')
+        .eq('election_id', electionId)
+        .order('display_order');
+    
+    if (error || !data) return [];
+    
+    return data;
 }
 
 export async function getIndicatorColumns(tableName) {

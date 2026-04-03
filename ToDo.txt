@@ -1,12 +1,27 @@
+Design/Website
 - Logo
-- p-value
-- radar charts
-- sources
+- Wasserzeichen
 - faq (was ist korrelation? wie berechnet? was drücken sie aus?)
+- erster blogeintrag?
+- kontaktinformationen mit echter adresse
+- idee für sharepic-überschrift: where votes grow
+- " je mehr desto " satz unter die korrelation
+
+Datenbank
+- sources
 - spaltenüberschriften
 - totals ausblenden
 - mehr zahlen zu anteilen umrechnen
+
+Funktionen
+- radar charts
+
+Verständnis
+- r² kapieren
+- Adjusted R²
+- RMSE
+- Konfidenzintervalle 
 - unterschied zu list2 verstehen
-- kontaktinformationen mit echter adresse
-- erster blogeintrag?
-- matrix richtig vernüpfen
+
+Sonstige
+
