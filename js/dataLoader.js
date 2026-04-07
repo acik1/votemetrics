@@ -4,10 +4,8 @@ let electionsMetadata = [];
 let structuralTables = [];
 
 export async function loadMetadata() {
-    console.log("🔍 loadMetadata() gestartet");
 
     // Elections-Metadaten laden
-    console.log("📡 Lade elections_metadata...");
     const { data: elections, error: electionsError } = await supabase
         .from('elections_metadata')
         .select('*');
@@ -15,12 +13,10 @@ export async function loadMetadata() {
     if (electionsError) {
         console.error("❌ Fehler beim Laden von elections_metadata:", electionsError);
     } else {
-        console.log("✅ elections_metadata geladen:", elections?.length || 0, "Einträge");
-        console.log("📋 elections_metadata Inhalt:", elections);
+
     }
 
     // Structural Tables laden
-    console.log("📡 Lade structural_tables...");
     const { data: tables, error: tablesError } = await supabase
         .from('structural_tables')
         .select('*');
@@ -28,17 +24,12 @@ export async function loadMetadata() {
     if (tablesError) {
         console.error("❌ Fehler beim Laden von structural_tables:", tablesError);
     } else {
-        console.log("✅ structural_tables geladen:", tables?.length || 0, "Einträge");
-        console.log("📋 structural_tables Inhalt:", tables);
+
     }
 
     electionsMetadata = elections || [];
     structuralTables = tables || [];
 
-    console.log("📦 Gespeichert:", {
-        elections: electionsMetadata.length,
-        structural: structuralTables.length
-    });
 
     return { elections: electionsMetadata, tables: structuralTables };
 }
@@ -124,7 +115,6 @@ export async function loadScatterData(electionId, tableName, partyKey, indicator
         })
         .filter(d => d !== null);
 
-    console.log(`📊 Kombiniert: ${combinedData.length} von ${structuralData?.length} Punkten`);
     return combinedData;
 }
 

@@ -30,7 +30,6 @@ async function renderHome() {
 }
 
 async function renderAnalyse() {
-    console.log("1. renderAnalyse gestartet");
     await loadMetadata();
 
     const contentDiv = document.getElementById('content');
@@ -41,19 +40,19 @@ async function renderAnalyse() {
             
             <div class="controls">
                 <div class="control-group">
-                    <label>🌍 Country / Election:</label>
+                    <label>Country / Election:</label>
                     <select id="election-select"></select>
                 </div>
                 <div class="control-group">
-                    <label>📂 Data Category:</label>
+                    <label>Data Category:</label>
                     <select id="category-select"></select>
                 </div>
                 <div class="control-group">
-                    <label>🎯 Party:</label>
+                    <label>Party:</label>
                     <select id="party-select"></select>
                 </div>
                 <div class="control-group">
-                    <label>📊 Indicator:</label>
+                    <label>Indicator:</label>
                     <select id="indicator-select"></select>
                 </div>
             </div>
@@ -69,8 +68,6 @@ async function renderAnalyse() {
 
     // ========== VORAUSGEWÄHLTE WERTE AUS MATRIX ÜBERNEHMEN ==========
     if (window.selectedParty && window.selectedIndicator) {
-        console.log("Vorausgewählte Werte gefunden:", window.selectedParty, window.selectedIndicator);
-
         // Election auswählen
         const electionSelect = document.getElementById('election-select');
         if (window.selectedElection) {
@@ -128,7 +125,6 @@ async function renderAnalyse() {
 }
 
 async function initAnalyseDropdowns(skipInitialLoad = true) {
-    console.log("initAnalyseDropdowns gestartet");
     const elections = getElections();
     const electionSelect = document.getElementById('election-select');
 
@@ -221,11 +217,6 @@ async function loadChart() {
     const partyKey = document.getElementById('party-select')?.value;
     const indicatorKey = document.getElementById('indicator-select')?.value;
 
-    console.log("🔍 loadChart started");
-    console.log("   electionId:", electionId);
-    console.log("   tableName:", tableName);
-    console.log("   partyKey:", partyKey);
-    console.log("   indicatorKey:", indicatorKey);
 
     if (!electionId || !tableName || !partyKey || !indicatorKey) {
         console.warn("⚠️ Not all dropdowns have values");
@@ -234,8 +225,7 @@ async function loadChart() {
 
     try {
         const data = await loadScatterData(electionId, tableName, partyKey, indicatorKey);
-        console.log("📊 Data from loadScatterData:", data);
-        console.log("   Number of data points:", data?.length);
+
 
         if (!data || data.length === 0) {
             console.warn("⚠️ No data returned");
@@ -245,7 +235,6 @@ async function loadChart() {
         const partyName = partyKey.replace(/_/g, ' ').toUpperCase();
         const indicatorName = indicatorKey.replace(/_/g, ' ');
 
-        console.log("🎨 Drawing chart with", data.length, "points");
         drawChart(data, partyName, indicatorName, '', '#FDB913');
 
     } catch (error) {
@@ -309,6 +298,7 @@ function renderKontakt() {
 // ========== MATRIX ==========
 
 async function renderMatrix() {
+
     await loadMetadata();
 
     const contentDiv = document.getElementById('content');
@@ -316,7 +306,7 @@ async function renderMatrix() {
         <div class="page-container">
             <h1>Correlation Matrix</h1>
             <p>Click on a cell to open the scatter plot.</p>
-            
+            <p>Smaller parties often don't run in all consituencies. Only correlations with a sample size of at least 30 are displayed.</p>
             <div class="controls">
                 <div class="control-group">
                     <label>🇭🇺 Election:</label>
@@ -340,16 +330,18 @@ async function renderMatrix() {
 
     await loadMatrix();
 }
+
 async function loadMatrix() {
     const electionId = document.getElementById('matrix-election-select').value;
     if (!electionId) return;
 
     try {
         // 1. Korrelationen laden
-        const { data: correlations, error: corrError } = await supabase
+        const { data: correlations, error: corrError, count } = await supabase
             .from('correlations_matrix')
-            .select('*')
-            .eq('election_id', electionId);
+            .select('*', { count: 'exact' })
+            .eq('election_id', electionId)
+            .range(0, 5000);
 
         if (corrError) throw corrError;
 
@@ -358,6 +350,21 @@ async function loadMatrix() {
                 '<p>No correlations found. Please run the Python script first.</p>';
             return;
         }
+
+        // ========== DEBUG: Korrelationen prüfen ==========
+        console.log('=== DEBUG: Korrelationen ===');
+        console.log('Geladene Korrelationen:', correlations.length);
+        console.log('Gesamtzahl in DB (count):', count);
+        console.log('Anzahl mit party_key mihazank_list:', correlations.filter(c => c.party_key === 'mihazank_list').length);
+        console.log('Anzahl mit indicator_key comfort_all_amenities:', correlations.filter(c => c.indicator_key === 'comfort_all_amenities').length);
+        
+        // Spezifischer Test
+        const specificTest = correlations.find(c => 
+            c.party_key === 'mihazank_list' && 
+            c.indicator_key === 'comfort_all_amenities'
+        );
+        console.log('Spezifischer Test (mihazank_list + comfort_all_amenities):', specificTest);
+        // ========== ENDE DEBUG ==========
 
         // 2. Metadaten für schöne Anzeigenamen laden
         const { data: indicatorsMeta } = await supabase
@@ -372,38 +379,32 @@ async function loadMatrix() {
             indicatorUnitMap.set(meta.indicator_key, meta.unit);
         });
 
-        // 3. Election-Tabelle für Parteien-Reihenfolge laden
-        const { data: electionMeta } = await supabase
-            .from('elections_metadata')
-            .select('election_table')
-            .eq('id', electionId)
-            .single();
-
-        const { data: electionSample } = await supabase
-            .from(electionMeta.election_table)
-            .select('*')
-            .limit(1);
-
-        // Parteien in originaler Reihenfolge
-        const allColumns = Object.keys(electionSample[0]);
-        const parties = allColumns.filter(col =>
-            col.endsWith('_list') &&
-            !['valid_votes_list', 'valid_votes_pct_list'].includes(col)
-        );
-
-        // 4. Party-Metadaten für schöne Namen laden
-        const { data: partyMeta } = await supabase
+        // 3. Party-Metadaten mit min_sample_size laden
+        const { data: partyMeta, error: partyError } = await supabase
             .from('party_metadata')
-            .select('column_name, display_name')
-            .eq('election_id', electionId);
+            .select('column_name, display_name, min_sample_size')
+            .eq('election_id', electionId)
+            .order('display_order');
 
+        if (partyError) throw partyError;
+
+        const MIN_SAMPLE_SIZE = 30;
+        const relevantParties = partyMeta.filter(p => p.min_sample_size >= MIN_SAMPLE_SIZE);
+
+        const parties = relevantParties.map(p => p.column_name);
         const partyNameMap = new Map();
-        partyMeta?.forEach(p => {
+        relevantParties.forEach(p => {
             partyNameMap.set(p.column_name, p.display_name);
         });
 
-        // 5. Indikatoren aus Korrelationen
+        // 4. Indikatoren aus Korrelationen
         const indicators = [...new Map(correlations.map(c => [c.indicator_key, c.indicator_key])).keys()];
+
+        // ========== DEBUG: indicators prüfen ==========
+        console.log('=== DEBUG: indicators ===');
+        console.log('Anzahl Indikatoren:', indicators.length);
+        console.log('Enthält comfort_all_amenities?', indicators.includes('comfort_all_amenities'));
+        // ========== ENDE DEBUG ==========
 
         // Sortierzustand
         let currentSortColumn = null;
@@ -432,14 +433,13 @@ async function loadMatrix() {
             let html = '<table class="correlation-matrix"><thead><tr><th></th>';
 
             parties.forEach(party => {
-                // Schöner Name aus party_metadata, fallback auf Original
                 const partyDisplay = partyNameMap.get(party) || party;
                 const sortIndicator = (currentSortColumn === party)
                     ? (currentSortDirection === 'asc' ? ' ↑' : ' ↓')
                     : '';
                 html += `<th data-party="${party}" class="sortable-header">${partyDisplay}${sortIndicator}</th>`;
             });
-            html += '<tr></thead><tbody>';
+            html += '</tr></thead><tbody>';
 
             sortedIndicators.forEach(indicator => {
                 const displayName = indicatorNameMap.get(indicator) || indicator.replace(/_/g, ' ');
@@ -449,29 +449,51 @@ async function loadMatrix() {
                 html += `<tr><td style="font-weight: bold;">${displayText}</td>`;
 
                 parties.forEach(party => {
+                    // ========== DEBUG für mihazank_list + comfort_all_amenities ==========
+                    if (party === 'mihazank_list' && indicator === 'comfort_all_amenities') {
+                        console.log(`🔍 Suche in Schleife: party=${party}, indicator=${indicator}`);
+                        const found = correlations.find(c => 
+                            c.party_key === party && c.indicator_key === indicator
+                        );
+                        console.log('Gefunden:', found);
+                    }
+                    // ========== ENDE DEBUG ==========
+
                     const corr = correlations.find(c =>
                         c.party_key === party &&
                         c.indicator_key === indicator
                     );
+
                     const r = corr?.r_value || 0;
+                    const sampleSize = corr?.sample_size || 0;
                     const absR = Math.abs(r);
                     let intensity = 0;
-                    let color = 'rgba(236, 236, 236, 0.5)';  // Neutral
+                    let color = 'rgba(236, 236, 236, 0.5)';
+                    let displayR = '';
 
-                    if (absR >= 0.15) {
+                    if (sampleSize < 30) {
+                        displayR = 'n/a';
+                        color = 'rgba(200, 200, 200, 0.3)';
+                    } else if (absR >= 0.15) {
                         intensity = Math.min((absR - 0.15) / 0.85, 1) * 0.7 + 0.2;
                         color = r > 0
                             ? `rgba(75, 192, 192, ${intensity})`
                             : `rgba(255, 99, 132, ${intensity})`;
+                        displayR = r.toFixed(2);
+                    } else {
+                        displayR = r.toFixed(2);
                     }
-                    const displayR = r.toFixed(2);
+
+                    const titleText = sampleSize < 30
+                        ? `⚠️ Nur in ${sampleSize} Wahlkreisen (zu wenig für aussagekräftige Korrelation)`
+                        : `R = ${r.toFixed(3)} (${sampleSize} cases)`;
 
                     html += `<td class="matrix-cell" 
                         style="background-color: ${color}; cursor: pointer;"
                         data-party="${party}"
                         data-indicator="${indicator}"
                         data-table="${corr?.table_name || ''}"
-                        title="R = ${displayR} (${corr?.sample_size || 0} cases)">
+                        title="${titleText}">
                         ${displayR}
                      </td>`;
                 });
