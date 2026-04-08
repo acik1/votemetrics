@@ -131,7 +131,7 @@ async function initAnalyseDropdowns(skipInitialLoad = true) {
     if (!electionSelect) return;
 
     electionSelect.innerHTML = elections.map(e =>
-        `<option value="${e.id}">${e.flag} ${e.country} ${e.year}</option>`
+        `<option value="${e.id}">${e.country} ${e.election_type} ${e.year}</option>`
     ).join('');
 
     // Event-Listener immer aktiv (damit Änderungen funktionieren)
@@ -179,10 +179,16 @@ async function updateCategories() {
 
 async function updateParties() {
     const electionId = document.getElementById('election-select').value;
-    const parties = await getPartyColumns(electionId);
+
+    // Lade Parteinamen aus party_metadata
+    const { data: partiesMeta } = await supabase
+        .from('party_metadata')
+        .select('column_name, display_name')
+        .eq('election_id', electionId)
+        .order('display_order');
 
     const partySelect = document.getElementById('party-select');
-    partySelect.innerHTML = parties.map(p =>
+    partySelect.innerHTML = partiesMeta.map(p =>
         `<option value="${p.column_name}">${p.display_name}</option>`
     ).join('');
 }
@@ -191,12 +197,13 @@ async function updateIndicators() {
     const tableName = document.getElementById('category-select')?.value;
     if (!tableName) return;
 
-    // Lade die Indikatoren mit ihren Anzeigenamen aus indicators_metadata
+    // Lade die Indikatoren OHNE ORDER, um die originale Reihenfolge zu behalten
     const { data: indicators, error } = await supabase
         .from('indicators_metadata')
         .select('indicator_key, indicator_name, unit')
         .eq('table_name', tableName)
-        .order('indicator_name');
+        .eq('election_id', document.getElementById('election-select').value)
+        .order('id', { ascending: true });  // Nach Einfügereihenfolge
 
     if (error) {
         console.error("Fehler beim Laden der Indikatoren:", error);
@@ -217,7 +224,6 @@ async function loadChart() {
     const partyKey = document.getElementById('party-select')?.value;
     const indicatorKey = document.getElementById('indicator-select')?.value;
 
-
     if (!electionId || !tableName || !partyKey || !indicatorKey) {
         console.warn("⚠️ Not all dropdowns have values");
         return;
@@ -226,16 +232,44 @@ async function loadChart() {
     try {
         const data = await loadScatterData(electionId, tableName, partyKey, indicatorKey);
 
-
         if (!data || data.length === 0) {
             console.warn("⚠️ No data returned");
             return;
         }
 
-        const partyName = partyKey.replace(/_/g, ' ').toUpperCase();
-        const indicatorName = indicatorKey.replace(/_/g, ' ');
+        // ========== SCHÖNE NAMEN AUS DER DATENBANK LADEN ==========
+        // Lade schönen Parteinamen aus party_metadata
+        const { data: partyMeta } = await supabase
+            .from('party_metadata')
+            .select('display_name, color')
+            .eq('election_id', electionId)
+            .eq('column_name', partyKey)
+            .single();
+           
 
-        drawChart(data, partyName, indicatorName, '', '#FDB913');
+        // Lade schönen Indikatornamen und Kategorie aus indicators_metadata
+        const { data: indicatorMeta } = await supabase
+            .from('indicators_metadata')
+            .select('indicator_name, unit, category')
+            .eq('election_id', electionId)
+            .eq('indicator_key', indicatorKey)
+            .eq('table_name', tableName)
+            .single();
+           
+
+        const partyName = partyMeta?.display_name || partyKey.replace(/_/g, ' ').toUpperCase();
+        const indicatorName = indicatorMeta?.indicator_name || indicatorKey.replace(/_/g, ' ');
+        const indicatorUnit = indicatorMeta?.unit || '';
+        const indicatorCategory = indicatorMeta?.category || '';
+        const partyColor = partyMeta?.color || '#FDB913';
+
+        // Mit Kategorie für die Anzeige
+        const fullIndicatorName = indicatorCategory
+            ? `${indicatorCategory} - ${indicatorName}`
+            : indicatorName;
+        // ========== ENDE ==========
+
+        drawChart(data, partyName, fullIndicatorName, indicatorUnit, partyColor);
 
     } catch (error) {
         console.error('❌ Error loading chart:', error);
@@ -246,11 +280,6 @@ function renderBlog() {
     document.getElementById('content').innerHTML = `
         <div class="page-container">
             <h1>Blog</h1>
-            <p>Soon: articles on interesting correlations and election analyses.</p>
-            <div class="blog-teaser">
-                <h3>Coming soon...</h3>
-                <p>First analysis: Car density and CDU results</p>
-            </div>
         </div>
     `;
 }
@@ -309,7 +338,7 @@ async function renderMatrix() {
             <p>Smaller parties often don't run in all consituencies. Only correlations with a sample size of at least 30 are displayed.</p>
             <div class="controls">
                 <div class="control-group">
-                    <label>🇭🇺 Election:</label>
+                    <label>Election:</label>
                     <select id="matrix-election-select"></select>
                 </div>
             </div>
@@ -323,7 +352,7 @@ async function renderMatrix() {
     const electionSelect = document.getElementById('matrix-election-select');
     const elections = getElections();
     electionSelect.innerHTML = elections.map(e =>
-        `<option value="${e.id}">${e.flag} ${e.country} ${e.year}</option>`
+        `<option value="${e.id}">${e.country} ${e.election_type} ${e.year}</option>`
     ).join('');
 
     electionSelect.addEventListener('change', () => loadMatrix());
@@ -351,32 +380,19 @@ async function loadMatrix() {
             return;
         }
 
-        // ========== DEBUG: Korrelationen prüfen ==========
-        console.log('=== DEBUG: Korrelationen ===');
-        console.log('Geladene Korrelationen:', correlations.length);
-        console.log('Gesamtzahl in DB (count):', count);
-        console.log('Anzahl mit party_key mihazank_list:', correlations.filter(c => c.party_key === 'mihazank_list').length);
-        console.log('Anzahl mit indicator_key comfort_all_amenities:', correlations.filter(c => c.indicator_key === 'comfort_all_amenities').length);
-        
-        // Spezifischer Test
-        const specificTest = correlations.find(c => 
-            c.party_key === 'mihazank_list' && 
-            c.indicator_key === 'comfort_all_amenities'
-        );
-        console.log('Spezifischer Test (mihazank_list + comfort_all_amenities):', specificTest);
-        // ========== ENDE DEBUG ==========
-
-        // 2. Metadaten für schöne Anzeigenamen laden
+        // 2. Metadaten für schöne Anzeigenamen + Kategorie laden
         const { data: indicatorsMeta } = await supabase
             .from('indicators_metadata')
-            .select('indicator_key, indicator_name, unit')
+            .select('indicator_key, indicator_name, unit, category')
             .eq('election_id', electionId);
 
         const indicatorNameMap = new Map();
         const indicatorUnitMap = new Map();
+        const indicatorCategoryMap = new Map();
         indicatorsMeta?.forEach(meta => {
             indicatorNameMap.set(meta.indicator_key, meta.indicator_name);
             indicatorUnitMap.set(meta.indicator_key, meta.unit);
+            indicatorCategoryMap.set(meta.indicator_key, meta.category);
         });
 
         // 3. Party-Metadaten mit min_sample_size laden
@@ -399,12 +415,6 @@ async function loadMatrix() {
 
         // 4. Indikatoren aus Korrelationen
         const indicators = [...new Map(correlations.map(c => [c.indicator_key, c.indicator_key])).keys()];
-
-        // ========== DEBUG: indicators prüfen ==========
-        console.log('=== DEBUG: indicators ===');
-        console.log('Anzahl Indikatoren:', indicators.length);
-        console.log('Enthält comfort_all_amenities?', indicators.includes('comfort_all_amenities'));
-        // ========== ENDE DEBUG ==========
 
         // Sortierzustand
         let currentSortColumn = null;
@@ -439,26 +449,26 @@ async function loadMatrix() {
                     : '';
                 html += `<th data-party="${party}" class="sortable-header">${partyDisplay}${sortIndicator}</th>`;
             });
-            html += '</tr></thead><tbody>';
+            html += '<tr></thead><tbody>';
 
             sortedIndicators.forEach(indicator => {
                 const displayName = indicatorNameMap.get(indicator) || indicator.replace(/_/g, ' ');
                 const unit = indicatorUnitMap.get(indicator) || '';
-                const displayText = unit ? `${displayName} (${unit})` : displayName;
+                const category = indicatorCategoryMap.get(indicator) || '';
+
+                // Mit Kategorie, falls vorhanden
+                let displayText = '';
+                if (category && displayName) {
+                    displayText = `${category} - ${displayName}${unit ? ` (${unit})` : ''}`;
+                } else if (displayName) {
+                    displayText = `${displayName}${unit ? ` (${unit})` : ''}`;
+                } else {
+                    displayText = indicator;
+                }
 
                 html += `<tr><td style="font-weight: bold;">${displayText}</td>`;
 
                 parties.forEach(party => {
-                    // ========== DEBUG für mihazank_list + comfort_all_amenities ==========
-                    if (party === 'mihazank_list' && indicator === 'comfort_all_amenities') {
-                        console.log(`🔍 Suche in Schleife: party=${party}, indicator=${indicator}`);
-                        const found = correlations.find(c => 
-                            c.party_key === party && c.indicator_key === indicator
-                        );
-                        console.log('Gefunden:', found);
-                    }
-                    // ========== ENDE DEBUG ==========
-
                     const corr = correlations.find(c =>
                         c.party_key === party &&
                         c.indicator_key === indicator
@@ -485,8 +495,8 @@ async function loadMatrix() {
                     }
 
                     const titleText = sampleSize < 30
-                        ? `⚠️ Nur in ${sampleSize} Wahlkreisen (zu wenig für aussagekräftige Korrelation)`
-                        : `R = ${r.toFixed(3)} (${sampleSize} cases)`;
+                        ? `⚠️ Only in ${sampleSize} constituencies (insufficient for meaningful correlation)`
+                        : `R = ${r.toFixed(3)} (${sampleSize} constituencies)`;
 
                     html += `<td class="matrix-cell" 
                         style="background-color: ${color}; cursor: pointer;"

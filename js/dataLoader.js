@@ -46,14 +46,6 @@ export async function loadScatterData(electionId, tableName, partyKey, indicator
     const election = electionsMetadata.find(e => e.id === electionId);
     const structuralTable = structuralTables.find(t => t.table_name === tableName);
 
-    // Party-Metadaten holen
-    const { data: partyMeta } = await supabase
-        .from('party_metadata')
-        .select('*')
-        .eq('election_id', electionId)
-        .eq('party_key', partyKey)
-        .single();
-
     // Indicator-Metadaten holen (für Normalisierung)
     const { data: indicatorMeta } = await supabase
         .from('indicators_metadata')

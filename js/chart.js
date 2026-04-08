@@ -47,9 +47,7 @@ async function waitForChart() {
     throw new Error("Chart.js konnte nicht geladen werden");
 }
 
-export async function drawChart(data, partyName, indicatorName, indicatorUnit, partyColor) {
-    console.log("drawChart aufgerufen mit", data?.length, "Punkten");
-    
+export async function drawChart(data, partyName, indicatorName, indicatorUnit, partyColor) {    
     const canvas = document.getElementById("correlationChart");
     if (!canvas) {
         console.error("Canvas nicht gefunden");
@@ -86,9 +84,7 @@ export async function drawChart(data, partyName, indicatorName, indicatorUnit, p
     
     try {
         const ChartJS = await waitForChart();
-        
-        console.log("Chart wird erstellt mit", data.length, "Punkten");
-        
+                
         correlationChart = new ChartJS(ctx, {
             type: "scatter",
             data: {
@@ -105,7 +101,7 @@ export async function drawChart(data, partyName, indicatorName, indicatorUnit, p
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    title: { display: true, text: `Korrelation: ${partyName} vs. ${indicatorName}` },
+                    title: { display: true, text: `${partyName} vs. ${indicatorName}` },
                     subtitle: { 
                         display: true, 
                         text: pText ? `R = ${rValue.toFixed(3)} | R² = ${rSquared} | ${pText}` : `R = ${rValue.toFixed(3)} | R² = ${rSquared}`,
@@ -132,8 +128,10 @@ export async function drawChart(data, partyName, indicatorName, indicatorUnit, p
                 }
             }
         });
-        console.log("Chart erfolgreich erstellt");
     } catch (error) {
         console.error("Fehler beim Erstellen des Charts:", error);
+    }
+     if (data && data.length > 0) {
+
     }
 }

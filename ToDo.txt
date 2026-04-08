@@ -6,12 +6,9 @@ Design/Website
 - kontaktinformationen mit echter adresse
 - idee für sharepic-überschrift: where votes grow
 - " je mehr desto " satz unter die korrelation
-- undefined im ländertitel muss noch weg
-- nicht alle aus matrix existieren auch in scatterplot. außerdem namen falsch
 
 Datenbank
 - sources
-- totals ausblenden
 - zahlenstichproben mit quelle abgleichen
 - einzelne überschriften durchgehen und checken, ob name selbsterklärend
 
@@ -23,7 +20,6 @@ Verständnis
 - Adjusted R²
 - RMSE
 - Konfidenzintervalle 
-- unterschied zu list2 verstehen
 
 Sonstige
 
