@@ -10,7 +10,6 @@ const pages = {
     home: renderHome,
     analyse: renderAnalyse,
     matrix: renderMatrix,
-    blog: renderBlog,
     faq: renderFaq,
     kontakt: renderKontakt
 };
@@ -21,12 +20,8 @@ async function renderHome() {
     contentDiv.innerHTML = `
         <div class="page-container">
             <h1>Welcome to VoteMetrics</h1>
-            <button class="cta-button" id="go-to-analyse">Analysis →</button>
         </div>
     `;
-    document.getElementById('go-to-analyse')?.addEventListener('click', () => {
-        document.querySelector('a[data-page="analyse"]').click();
-    });
 }
 
 async function renderAnalyse() {
